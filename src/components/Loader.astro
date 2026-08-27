@@ -57,7 +57,8 @@ const outAt = nameAt + 0.62;
     display: grid;
     place-items: center;
     background: #ff3e3e;
-    animation: loader-out 0.5s ease var(--out-at) forwards;
+    animation: loader-out 0.72s cubic-bezier(0.72, 0, 0.24, 1) var(--out-at) forwards;
+    will-change: transform;
   }
 
   .loader-stage {
@@ -83,7 +84,7 @@ const outAt = nameAt + 0.62;
 
   .loader-name {
     font-family: var(--font-heading);
-    font-size: clamp(34px, 8vw, 64px);
+    font-size: clamp(40px, 9vw, 80px);
     font-weight: 500;
     letter-spacing: -0.04em;
     color: #fff;
@@ -103,8 +104,12 @@ const outAt = nameAt + 0.62;
     100% { opacity: 1; transform: none; }
   }
 
+  /* The panel lifts off rather than dissolving — the name rides up with it and
+     the grid is revealed underneath, which reads as a curtain instead of a
+     cross-fade. Ends off-viewport, so it cannot cover anything even if the
+     script never removes it. */
   @keyframes loader-out {
-    to { opacity: 0; visibility: hidden; }
+    to { transform: translateY(-100%); }
   }
 
   /* No flashing sequence for anyone who asked not to see motion. */
