@@ -562,7 +562,7 @@ export const work: WorkItem[] = [
     category: 'music',
     kind: 'embed',
     embed: sc('playlists', 97200519),
-    ratio: 16 / 10,
+    ratio: 1,
     poster: img('shine-ep.jpg'),
   },
   {
@@ -572,7 +572,7 @@ export const work: WorkItem[] = [
     category: 'music',
     kind: 'embed',
     embed: sc('tracks', 279867949),
-    ratio: 16 / 10,
+    ratio: 1,
     poster: img('me-without-you.jpg'),
   },
   {
@@ -582,7 +582,7 @@ export const work: WorkItem[] = [
     category: 'music',
     kind: 'embed',
     embed: sc('tracks', 221348745),
-    ratio: 16 / 10,
+    ratio: 1,
     poster: img('make-me-rest.jpg'),
   },
   {
@@ -592,7 +592,7 @@ export const work: WorkItem[] = [
     category: 'music',
     kind: 'embed',
     embed: sc('tracks', 175764332),
-    ratio: 16 / 10,
+    ratio: 1,
     poster: img('summer-again.jpg'),
   },
 ];

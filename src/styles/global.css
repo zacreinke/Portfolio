@@ -84,11 +84,8 @@
      columns render as 3/3/3/0 — so once JS is available we switch to explicit
      flex columns and place each tile in the shortest one. */
   .masonry {
-    column-count: 1;
+    column-count: 2;
     column-gap: 16px;
-  }
-  @media (min-width: 640px) {
-    .masonry { column-count: 2; }
   }
   @media (min-width: 1024px) {
     .masonry { column-count: 3; }

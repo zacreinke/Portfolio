@@ -50,12 +50,15 @@ let revealInView: () => void = () => {};
 /** Re-packs the masonry columns for the current filter and viewport. */
 let layout: () => void = () => {};
 
+/** Clears the revealed state so the fade-up can play again; null if disarmed. */
+let resetReveal: (() => void) | null = null;
+
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
 let sequence: number[] = frames.map((_, i) => i);
 let cursor = 0;
 
-function applyFilter(next: string) {
+function applyFilter(next: string, animate = false) {
   for (const tab of tabs) {
     const on = tab.dataset.filter === next;
     tab.setAttribute('aria-selected', String(on));
@@ -77,17 +80,18 @@ function applyFilter(next: string) {
 
   history.replaceState(null, '', next === 'all' ? location.pathname : `#${next}`);
 
-  // Re-pack first: the visible set changed, so column assignment changes too.
-  // Then re-check the viewport — tiles that were below the fold a moment ago
-  // may now be on screen. Called synchronously rather than via rAF, which never
-  // fires while the tab is in the background.
+  // Switching tabs replays the fade-up: wind every tile back to hidden, re-pack,
+  // then reveal. Reading offsetHeight in between forces the style change to
+  // land, so the transition restarts instead of being coalesced away.
+  if (animate) resetReveal?.();
   layout();
+  if (animate) void document.body.offsetHeight;
   revealInView();
 }
 
 tabsBar.addEventListener('click', (e) => {
   const tab = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-filter]');
-  if (tab) applyFilter(tab.dataset.filter!);
+  if (tab) applyFilter(tab.dataset.filter!, true);
 });
 
 // Roving tabindex — arrow keys move along the tab bar, as a tablist should.
@@ -97,7 +101,7 @@ tabsBar.addEventListener('keydown', (e) => {
   e.preventDefault();
   const at = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
   const to = tabs[(at + dir + tabs.length) % tabs.length]!;
-  applyFilter(to.dataset.filter!);
+  applyFilter(to.dataset.filter!, true);
   to.focus();
 });
 
@@ -120,7 +124,38 @@ if (tabsFade) {
 
 /* ------------------------------- lightbox --------------------------------- */
 
+/** Re-fits the open embed when the viewport changes; null when none is open. */
+let refit: (() => void) | null = null;
+
+/**
+ * Size an embed to fit inside the stage.
+ *
+ * CSS can't do this on its own here: a div has no intrinsic size, so one axis
+ * has to be definite — and the moment a max-* constraint binds against a
+ * definite axis, `aspect-ratio` is dropped rather than preserved. That put a
+ * 16:9 video in a 1024xfull-height box and let the player letterbox inside it.
+ * Computing the fit is exact for landscape, portrait and square alike.
+ */
+function fitBox(box: HTMLElement, ratio: number) {
+  const apply = () => {
+    const stageBox = stage.getBoundingClientRect();
+    let w = Math.min(stageBox.width, 1024);
+    let h = w / ratio;
+    if (h > stageBox.height) {
+      h = stageBox.height;
+      w = h * ratio;
+    }
+    box.style.width = `${Math.round(w)}px`;
+    box.style.height = `${Math.round(h)}px`;
+  };
+  apply();
+  refit = apply;
+}
+
+addEventListener('resize', () => refit?.());
+
 function render() {
+  refit = null;
   const frame = frames[sequence[cursor]!]!;
 
   stage.replaceChildren();
@@ -137,18 +172,13 @@ function render() {
     video.className = 'max-h-full max-w-full rounded-tile object-contain';
     stage.append(video);
   } else if (frame.kind === 'embed') {
-    // Wrap the iframe in a ratio box: an iframe has no intrinsic size, so
+    // Wrap the iframe in a sized box: an iframe has no intrinsic size, so
     // without one it collapses the same way a metadata-less <video> does.
     const box = document.createElement('div');
     // Solid ground: a player that is slow or blocked would otherwise let the
     // blurred page show straight through the frame.
     box.className = 'overflow-hidden rounded-tile bg-ink';
-    // height:100% + width:auto + aspect-ratio sizes correctly for both
-    // orientations — a 9:16 Short would overflow if width drove the box.
-    box.style.aspectRatio = String(frame.ratio ?? 16 / 9);
-    box.style.height = '100%';
-    box.style.width = 'auto';
-    box.style.maxWidth = 'min(100%, 1024px)';
+    fitBox(box, frame.ratio ?? 16 / 9);
     const iframe = document.createElement('iframe');
     iframe.src = frame.src;
     iframe.title = frame.title;
@@ -205,6 +235,9 @@ function open(frameIndex: number) {
   cursor = at;
   render();
   dialog.showModal();
+  // A closed <dialog> is display:none, so the stage measured 0x0 during
+  // render(). Now that it is in the top layer, size the embed for real.
+  refit?.();
   document.body.style.overflow = 'hidden';
 }
 
@@ -240,6 +273,7 @@ dialog.addEventListener('close', () => {
   // emits one when the top layer is disturbed, e.g. by a DevTools-protocol
   // screenshot — would otherwise blank a lightbox that is still on screen.
   if (dialog.open) return;
+  refit = null;
   stage.replaceChildren();
   document.body.style.overflow = '';
 });
@@ -253,7 +287,8 @@ dialog.addEventListener('close', () => {
 {
   const grid = document.querySelector<HTMLElement>('.masonry');
   if (grid) {
-    const columnsFor = (w: number) => (w >= 1280 ? 4 : w >= 1024 ? 3 : w >= 640 ? 2 : 1);
+    // Never drop to one column — two keeps the grid reading as a grid on phones.
+    const columnsFor = (w: number) => (w >= 1280 ? 4 : w >= 1024 ? 3 : 2);
     let columnCount = 0;
 
     layout = () => {
@@ -322,6 +357,16 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObse
   // IntersectionObserver reports position at one instant. Images finishing and
   // filters reflowing both move tiles afterwards, and a tile that ends up on
   // screen without ever crossing the boundary would stay invisible forever.
+  resetReveal = () => {
+    for (const tile of tiles) {
+      tile.classList.remove('is-visible');
+      tile.style.transitionDelay = '';
+      // Re-observe: tiles are unobserved once revealed, and a tile that is
+      // off-screen now may scroll into view under the new filter.
+      observer.observe(tile);
+    }
+  };
+
   revealInView = () => {
     const pending = tiles.filter(
       (t) => !t.hidden && !t.classList.contains('is-visible') && t.getBoundingClientRect().top < innerHeight,
