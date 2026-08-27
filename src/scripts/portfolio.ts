@@ -124,6 +124,18 @@ if (tabsFade) {
 
 /* ------------------------------- lightbox --------------------------------- */
 
+/**
+ * Ask a hosted player to start on its own. The lightbox only ever opens from a
+ * click, so the gesture that permits autoplay has already happened — the iframe
+ * carries allow="autoplay" to inherit it.
+ */
+function autoplay(src: string): string {
+  const url = new URL(src);
+  if (url.hostname.endsWith('soundcloud.com')) url.searchParams.set('auto_play', 'true');
+  else url.searchParams.set('autoplay', '1');
+  return url.href;
+}
+
 /** Re-fits the open embed when the viewport changes; null when none is open. */
 let refit: (() => void) | null = null;
 
@@ -180,7 +192,7 @@ function render() {
     box.className = 'overflow-hidden rounded-tile bg-ink';
     fitBox(box, frame.ratio ?? 16 / 9);
     const iframe = document.createElement('iframe');
-    iframe.src = frame.src;
+    iframe.src = autoplay(frame.src);
     iframe.title = frame.title;
     iframe.className = 'size-full border-0';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture';

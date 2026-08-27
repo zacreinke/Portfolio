@@ -83,7 +83,7 @@ const mediaClass =
     {
       isPlayable && (
         <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span class="flex size-12 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm">
+          <span class="flex size-12 items-center justify-center rounded-full bg-ink/30 text-card backdrop-blur-sm">
             <svg viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -96,7 +96,7 @@ const mediaClass =
   {/* Count badge — a fixed circle, so 1 and 12 render at the same size. */}
   {
     slideCount > 1 && (
-      <span class="pointer-events-none absolute top-2.5 right-2.5 z-10 flex size-7 items-center justify-center rounded-full bg-card/90 text-[11px] font-semibold tabular-nums backdrop-blur-sm">
+      <span class="pointer-events-none absolute top-2.5 right-2.5 z-10 flex size-7 items-center justify-center rounded-full bg-ink/30 text-[11px] font-semibold text-card tabular-nums backdrop-blur-sm">
         {slideCount}
       </span>
     )
