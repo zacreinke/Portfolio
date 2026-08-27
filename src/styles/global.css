@@ -53,7 +53,9 @@
   }
 
   body {
-    background: var(--color-page);
+    /* The page sits on black; the card below carries the page colour. */
+    background: var(--color-ink);
+    padding: 8px;
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: 14px;
@@ -70,6 +72,21 @@
 }
 
 @layer components {
+  /* The whole site is one rounded card floating on the black ground.
+     overflow:hidden keeps hover scales and the carousel fan from bleeding into
+     the 8px frame. Modal <dialog> lives in the top layer, so the lightbox is
+     unaffected by this clip and still covers the whole viewport. */
+  .shell {
+    display: flex;
+    overflow: hidden;
+    min-height: calc(100vh - 16px);
+    /* dvh where supported, so mobile browser chrome doesn't overshoot. */
+    min-height: calc(100dvh - 16px);
+    flex-direction: column;
+    border-radius: 48px;
+    background: var(--color-page);
+  }
+
   /* Section eyebrow / small caps label — resume h2 treatment. */
   .label-caps {
     font-size: 12px;

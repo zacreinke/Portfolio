@@ -11,13 +11,15 @@ import Loader from '../components/Loader.astro';
 
 <Base>
   <Loader />
-  <Nav />
-  <main class="flex-1">
-    <Hero />
-    <FilterTabs />
-    <MasonryGrid />
-  </main>
-  <Footer />
+  <div class="shell">
+    <Nav />
+    <main class="flex-1">
+      <Hero />
+      <FilterTabs />
+      <MasonryGrid />
+    </main>
+    <Footer />
+  </div>
   <Lightbox />
 
   <script>
