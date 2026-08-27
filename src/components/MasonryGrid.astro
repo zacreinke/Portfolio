@@ -2,7 +2,7 @@
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import WorkTile from './WorkTile.astro';
-import { work, isImageSlide } from '../data/work';
+import { work, isImageSlide, isDocSlide } from '../data/work';
 import { categories, categoryLabel } from '../data/site';
 import { withBase } from '../lib/url';
 
@@ -17,7 +17,7 @@ type Frame = {
   categoryLabel: string;
   title: string;
   caption: string;
-  kind: 'image' | 'video' | 'embed' | 'model';
+  kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
   /** Full-size source for the lightbox. */
   src: string;
   width: number;
@@ -28,6 +28,8 @@ type Frame = {
   ratio?: number;
   /** Selectable bodies for a model frame; one entry means no dropdown. */
   parts?: { label: string; src: string }[];
+  /** Pages of a document frame, stacked and scrolled rather than paged. */
+  pages?: { src: string; width: number; height: number }[];
 };
 
 /** Animated GIFs and SVGs are passed through untouched; sharp would flatten them. */
@@ -78,6 +80,22 @@ for (const item of interleaved) {
   if (item.kind === 'carousel') {
     const total = item.slides.length;
     for (const [i, slide] of item.slides.entries()) {
+      if (isDocSlide(slide)) {
+        const pages = [];
+        for (const page of slide.doc) pages.push(await sized(page, 1400));
+        frames.push({
+          ...shared,
+          caption: slide.caption || item.caption,
+          kind: 'doc',
+          src: pages[0]!.url,
+          width: pages[0]!.width,
+          height: pages[0]!.height,
+          slide: i + 1,
+          slides: total,
+          pages: pages.map((pg) => ({ src: pg.url, width: pg.width, height: pg.height })),
+        });
+        continue;
+      }
       if (!isImageSlide(slide)) {
         const parts = (
           typeof slide.model === 'string'

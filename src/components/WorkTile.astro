@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import { isImageSlide, type WorkItem } from '../data/work';
+import { coverOf, isImageSlide, type WorkItem } from '../data/work';
 
 interface Props {
   item: WorkItem;
@@ -12,13 +12,7 @@ interface Props {
 
 const { item, index, eager = false } = Astro.props;
 
-// A carousel's first slide is always a still — the model, if any, follows it.
-const cover: ImageMetadata =
-  item.kind === 'carousel'
-    ? (item.slides.find(isImageSlide)!.src)
-    : item.kind === 'image'
-      ? item.src
-      : item.poster;
+const cover: ImageMetadata = coverOf(item);
 
 const slideCount = item.kind === 'carousel' ? item.slides.length : 1;
 const isPlayable = item.kind === 'video' || item.kind === 'embed';

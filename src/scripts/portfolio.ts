@@ -8,7 +8,7 @@ type Frame = {
   categoryLabel: string;
   title: string;
   caption: string;
-  kind: 'image' | 'video' | 'embed' | 'model';
+  kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
   src: string;
   width: number;
   height: number;
@@ -16,6 +16,7 @@ type Frame = {
   slides: number;
   ratio?: number;
   parts?: { label: string; src: string }[];
+  pages?: { src: string; width: number; height: number }[];
 };
 
 const payload = document.getElementById('frames');
@@ -192,6 +193,28 @@ function render() {
     video.style.aspectRatio = `${frame.width} / ${frame.height}`;
     video.className = 'max-h-full max-w-full rounded-tile object-contain';
     stage.append(video);
+  } else if (frame.kind === 'doc' && frame.pages) {
+    // A document is read by scrolling, not by arrowing page to page. Pages stack
+    // in one column; overscroll-contain keeps a flick at the end from chaining
+    // out to whatever is behind the dialog.
+    const doc = document.createElement('div');
+    doc.className =
+      'h-full w-full max-w-3xl overflow-y-auto overscroll-contain rounded-tile bg-card';
+    doc.tabIndex = 0;
+    doc.setAttribute('aria-label', `${frame.title}, ${frame.pages.length} pages`);
+    frame.pages.forEach((page, i) => {
+      const img = new Image();
+      img.src = page.src;
+      img.alt = `${frame.title} — page ${i + 1}`;
+      img.width = page.width;
+      img.height = page.height;
+      img.loading = i < 2 ? 'eager' : 'lazy';
+      img.decoding = 'async';
+      img.className = 'block h-auto w-full';
+      doc.append(img);
+    });
+    stage.append(doc);
+    doc.focus({ preventScroll: true });
   } else if (frame.kind === 'model') {
     const box = document.createElement('div');
     box.className = 'relative overflow-hidden rounded-tile bg-card';

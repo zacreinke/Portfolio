@@ -41,10 +41,25 @@ export type ModelPart = { label: string; file: string };
 export type Slide =
   | { src: ImageMetadata; caption: string }
   /** A single GLB, or several parts offered in the viewer's dropdown. */
-  | { model: string | ModelPart[]; caption: string };
+  | { model: string | ModelPart[]; caption: string }
+  /** A multi-page document — read by scrolling, not by arrowing page to page. */
+  | { doc: ImageMetadata[]; caption: string };
 
 export const isImageSlide = (s: Slide): s is { src: ImageMetadata; caption: string } =>
   'src' in s;
+export const isDocSlide = (s: Slide): s is { doc: ImageMetadata[]; caption: string } =>
+  'doc' in s;
+
+/** The still a tile shows: the first image, or a document's first page. */
+export function coverOf(item: WorkItem): ImageMetadata {
+  if (item.kind === 'image') return item.src;
+  if (item.kind !== 'carousel') return item.poster;
+  const still = item.slides.find(isImageSlide);
+  if (still) return still.src;
+  const doc = item.slides.find(isDocSlide);
+  if (doc) return doc.doc[0]!;
+  throw new Error(`[work.ts] "${item.id}" has no slide that can act as a cover`);
+}
 
 type Base = {
   id: string;
@@ -243,6 +258,18 @@ export const work: WorkItem[] = [
       { src: img('christmas-tree-gray-mockup.jpg'), caption: 'Christmas Tree — gray colorway' },
       { src: img('emojis-mockup.jpg'), caption: 'Emojis — framed print' },
       { src: img('emojis-pink-mockup.jpg'), caption: 'Emojis — pink colorway' },
+      { src: img('the-shop-x-01-jaguar-black-purple-mu1.jpg'), caption: 'jaguar black purple mu1' },
+      { src: img('the-shop-x-02-jaguar-sunburst-green-mu1.jpg'), caption: 'jaguar sunburst green mu1' },
+      { src: img('the-shop-x-03-jaguar-white-blue-mu1.jpg'), caption: 'jaguar white blue mu1' },
+      { src: img('the-shop-x-04-les-paul-black-gray-mu1.jpg'), caption: 'les paul black gray mu1' },
+      { src: img('the-shop-x-05-les-paul-gold-brown-mu1.jpg'), caption: 'les paul gold brown mu1' },
+      { src: img('the-shop-x-06-les-paul-sunburst-blue-mu1.jpg'), caption: 'les paul sunburst blue mu1' },
+      { src: img('the-shop-x-07-les-paul-junior-cream-purple-mu1.jpg'), caption: 'les paul junior cream purple mu1' },
+      { src: img('the-shop-x-08-les-paul-junior-red-green-mu1.jpg'), caption: 'les paul junior red green mu1' },
+      { src: img('the-shop-x-09-les-paul-junior-yellow-red-mu1.jpg'), caption: 'les paul junior yellow red mu1' },
+      { src: img('the-shop-x-10-mustang-bronze-green-mu1.jpg'), caption: 'mustang bronze green mu1' },
+      { src: img('the-shop-x-11-mustang-red-gray-mu1.jpg'), caption: 'mustang red gray mu1' },
+      { src: img('the-shop-x-12-mustang-yellow-gray-mu1.jpg'), caption: 'mustang yellow gray mu1' },
     ],
   },
   {
@@ -352,6 +379,7 @@ export const work: WorkItem[] = [
       { src: img('be-my-quarantine-01-bmq-d1-med.png'), caption: 'BMQ' },
       { src: img('be-my-quarantine-02-be-my-quarantine.jpg'), caption: 'be my quarantine' },
       { src: img('be-my-quarantine-03-be-my-quarantine.jpg'), caption: 'be my quarantine' },
+      { src: img('be-my-quarantine-x-01-bmq-instructions.png'), caption: 'BMQ Instructions' },
     ],
   },
   {
@@ -371,12 +399,6 @@ export const work: WorkItem[] = [
     category: 'web-ui',
     kind: 'carousel',
     slides: [
-      { src: img('time-clock.png'), caption: 'Bilflo — time tracking' },
-      { src: img('invoice.png'), caption: 'Bilflo — invoicing' },
-      { src: img('time-and-money.png'), caption: 'Bilflo — billing' },
-      { src: img('printer.png'), caption: 'Bilflo — reporting' },
-      { src: img('laptop.png'), caption: 'Bilflo — dashboard' },
-      { src: img('monitor.png'), caption: 'Bilflo — analytics' },
       { src: img('bilflo-app-add-01-invoice.png'), caption: 'Invoice' },
       { src: img('bilflo-app-add-02-laptop.png'), caption: 'Laptop' },
       { src: img('bilflo-app-add-03-monitor.png'), caption: 'Monitor' },
@@ -726,6 +748,7 @@ export const work: WorkItem[] = [
       { src: img('amtec-holiday-campaigns-04-christmas-idea-1.png'), caption: 'Christmas idea 1' },
       { src: img('amtec-holiday-campaigns-05-christmas-2025-ideas.jpg'), caption: 'Christmas 2025 ideas' },
       { src: img('amtec-holiday-campaigns-06-thank-you-2024.png'), caption: 'Thank you 2024' },
+      { src: img('amtec-holiday-campaigns-x-01-2018-d2.jpg'), caption: '2018' },
     ],
   },
   {
@@ -899,6 +922,9 @@ export const work: WorkItem[] = [
       { src: img('logos-marks-add-04-zr-d9.jpg'), caption: 'ZR' },
       { src: img('logos-marks-add-05-eg-lockup-xl.png'), caption: 'eg lockup xl' },
       { src: img('logos-marks-add-06-revd-up-lockup-vertical-light-xl.png'), caption: 'revd up lockup vertical light xl' },
+      { src: img('logos-marks-x-01-foothills-d1.jpg'), caption: 'Foothills' },
+      { src: img('logos-marks-x-02-foothills-d3.jpg'), caption: 'Foothills' },
+      { src: img('logos-marks-x-03-tunable-tunes-march-2022.jpg'), caption: 'tunable tunes march 2022' },
     ],
   },
   {
@@ -924,30 +950,50 @@ export const work: WorkItem[] = [
     category: 'graphic-design',
     kind: 'carousel',
     slides: [
-      { src: img('amtec-brand-docs-01-amtec-me-style-guide-p01.jpg'), caption: 'Amtec me style guide — page 01' },
-      { src: img('amtec-brand-docs-02-amtec-me-style-guide-p02.jpg'), caption: 'Amtec me style guide — page 02' },
-      { src: img('amtec-brand-docs-03-amtec-me-style-guide-p03.jpg'), caption: 'Amtec me style guide — page 03' },
-      { src: img('amtec-brand-docs-04-amtec-me-style-guide-p04.jpg'), caption: 'Amtec me style guide — page 04' },
-      { src: img('amtec-brand-docs-05-amtec-me-style-guide-p05.jpg'), caption: 'Amtec me style guide — page 05' },
-      { src: img('amtec-brand-docs-06-amtec-me-style-guide-p06.jpg'), caption: 'Amtec me style guide — page 06' },
-      { src: img('amtec-brand-docs-07-the-amtec-process-p01.jpg'), caption: 'The amtec process — page 01' },
-      { src: img('amtec-brand-docs-08-the-amtec-process-p02.jpg'), caption: 'The amtec process — page 02' },
-      { src: img('amtec-brand-docs-09-welcome-to-amtec-p01.jpg'), caption: 'Welcome to amtec — page 01' },
-      { src: img('amtec-brand-docs-10-welcome-to-amtec-p02.jpg'), caption: 'Welcome to amtec — page 02' },
-      { src: img('amtec-brand-docs-11-welcome-to-amtec-p03.jpg'), caption: 'Welcome to amtec — page 03' },
-      { src: img('amtec-brand-docs-12-welcome-to-amtec-p04.jpg'), caption: 'Welcome to amtec — page 04' },
-      { src: img('amtec-brand-docs-13-welcome-to-amtec-p05.jpg'), caption: 'Welcome to amtec — page 05' },
-      { src: img('amtec-brand-docs-14-welcome-to-amtec-p06.jpg'), caption: 'Welcome to amtec — page 06' },
-      { src: img('amtec-brand-docs-15-welcome-to-amtec-p07.jpg'), caption: 'Welcome to amtec — page 07' },
-      { src: img('amtec-brand-docs-16-welcome-to-amtec-p08.jpg'), caption: 'Welcome to amtec — page 08' },
-      { src: img('amtec-brand-docs-17-welcome-to-amtec-p09.jpg'), caption: 'Welcome to amtec — page 09' },
-      { src: img('amtec-brand-docs-18-welcome-to-amtec-p10.jpg'), caption: 'Welcome to amtec — page 10' },
-      { src: img('amtec-brand-docs-19-welcome-to-amtec-p11.jpg'), caption: 'Welcome to amtec — page 11' },
-      { src: img('amtec-brand-docs-20-welcome-to-amtec-p12.jpg'), caption: 'Welcome to amtec — page 12' },
-      { src: img('amtec-brand-docs-21-welcome-to-amtec-p13.jpg'), caption: 'Welcome to amtec — page 13' },
-      { src: img('amtec-brand-docs-22-welcome-to-amtec-p14.jpg'), caption: 'Welcome to amtec — page 14' },
-      { src: img('amtec-brand-docs-23-welcome-to-amtec-p15.jpg'), caption: 'Welcome to amtec — page 15' },
-      { src: img('amtec-brand-docs-24-amtec-benefits-summary.jpg'), caption: 'Amtec benefits summary' },
+      {
+        doc: [
+          img('amtec-brand-docs-01-amtec-me-style-guide-p01.jpg'),
+          img('amtec-brand-docs-02-amtec-me-style-guide-p02.jpg'),
+          img('amtec-brand-docs-03-amtec-me-style-guide-p03.jpg'),
+          img('amtec-brand-docs-04-amtec-me-style-guide-p04.jpg'),
+          img('amtec-brand-docs-05-amtec-me-style-guide-p05.jpg'),
+          img('amtec-brand-docs-06-amtec-me-style-guide-p06.jpg'),
+        ],
+        caption: 'Amtec.Me brand style guide',
+      },
+      {
+        doc: [
+          img('amtec-brand-docs-07-the-amtec-process-p01.jpg'),
+          img('amtec-brand-docs-08-the-amtec-process-p02.jpg'),
+        ],
+        caption: 'The Amtec Process',
+      },
+      {
+        doc: [
+          img('amtec-brand-docs-09-welcome-to-amtec-p01.jpg'),
+          img('amtec-brand-docs-10-welcome-to-amtec-p02.jpg'),
+          img('amtec-brand-docs-11-welcome-to-amtec-p03.jpg'),
+          img('amtec-brand-docs-12-welcome-to-amtec-p04.jpg'),
+          img('amtec-brand-docs-13-welcome-to-amtec-p05.jpg'),
+          img('amtec-brand-docs-14-welcome-to-amtec-p06.jpg'),
+          img('amtec-brand-docs-15-welcome-to-amtec-p07.jpg'),
+          img('amtec-brand-docs-16-welcome-to-amtec-p08.jpg'),
+          img('amtec-brand-docs-17-welcome-to-amtec-p09.jpg'),
+          img('amtec-brand-docs-18-welcome-to-amtec-p10.jpg'),
+          img('amtec-brand-docs-19-welcome-to-amtec-p11.jpg'),
+          img('amtec-brand-docs-20-welcome-to-amtec-p12.jpg'),
+          img('amtec-brand-docs-21-welcome-to-amtec-p13.jpg'),
+          img('amtec-brand-docs-22-welcome-to-amtec-p14.jpg'),
+          img('amtec-brand-docs-23-welcome-to-amtec-p15.jpg'),
+        ],
+        caption: 'Welcome to Amtec',
+      },
+      {
+        doc: [
+          img('amtec-brand-docs-24-amtec-benefits-summary.jpg'),
+        ],
+        caption: 'Benefits summary',
+      },
     ],
   },
   {
@@ -957,38 +1003,63 @@ export const work: WorkItem[] = [
     category: 'graphic-design',
     kind: 'carousel',
     slides: [
-      { src: img('amtec-social-guides-01-5-highest-paying-careers-in-california-p01.jpg'), caption: '5 highest paying careers in california — page 01' },
-      { src: img('amtec-social-guides-02-5-highest-paying-careers-in-california-p02.jpg'), caption: '5 highest paying careers in california — page 02' },
-      { src: img('amtec-social-guides-03-5-highest-paying-careers-in-california-p03.jpg'), caption: '5 highest paying careers in california — page 03' },
-      { src: img('amtec-social-guides-04-5-highest-paying-careers-in-california-p04.jpg'), caption: '5 highest paying careers in california — page 04' },
-      { src: img('amtec-social-guides-05-5-highest-paying-careers-in-california-p05.jpg'), caption: '5 highest paying careers in california — page 05' },
-      { src: img('amtec-social-guides-06-5-highest-paying-careers-in-california-p06.jpg'), caption: '5 highest paying careers in california — page 06' },
-      { src: img('amtec-social-guides-07-5-highest-paying-careers-in-california-p07.jpg'), caption: '5 highest paying careers in california — page 07' },
-      { src: img('amtec-social-guides-08-how-to-find-a-career-you-love-p01.jpg'), caption: 'How to find a career you love — page 01' },
-      { src: img('amtec-social-guides-09-how-to-find-a-career-you-love-p02.jpg'), caption: 'How to find a career you love — page 02' },
-      { src: img('amtec-social-guides-10-how-to-find-a-career-you-love-p03.jpg'), caption: 'How to find a career you love — page 03' },
-      { src: img('amtec-social-guides-11-how-to-find-a-career-you-love-p04.jpg'), caption: 'How to find a career you love — page 04' },
-      { src: img('amtec-social-guides-12-how-to-find-a-career-you-love-p05.jpg'), caption: 'How to find a career you love — page 05' },
-      { src: img('amtec-social-guides-13-how-to-find-a-career-you-love-p06.jpg'), caption: 'How to find a career you love — page 06' },
-      { src: img('amtec-social-guides-14-how-to-find-a-career-you-love-p07.jpg'), caption: 'How to find a career you love — page 07' },
-      { src: img('amtec-social-guides-15-how-to-refer-someone-for-a-job-p01.jpg'), caption: 'How to refer someone for a job — page 01' },
-      { src: img('amtec-social-guides-16-how-to-refer-someone-for-a-job-p02.jpg'), caption: 'How to refer someone for a job — page 02' },
-      { src: img('amtec-social-guides-17-how-to-refer-someone-for-a-job-p03.jpg'), caption: 'How to refer someone for a job — page 03' },
-      { src: img('amtec-social-guides-18-how-to-refer-someone-for-a-job-p04.jpg'), caption: 'How to refer someone for a job — page 04' },
-      { src: img('amtec-social-guides-19-how-to-refer-someone-for-a-job-p05.jpg'), caption: 'How to refer someone for a job — page 05' },
-      { src: img('amtec-social-guides-20-how-to-refer-someone-for-a-job-p06.jpg'), caption: 'How to refer someone for a job — page 06' },
-      { src: img('amtec-social-guides-21-top-5-highest-paying-trade-jobs-p01.jpg'), caption: 'Top 5 highest paying trade jobs — page 01' },
-      { src: img('amtec-social-guides-22-top-5-highest-paying-trade-jobs-p02.jpg'), caption: 'Top 5 highest paying trade jobs — page 02' },
-      { src: img('amtec-social-guides-23-top-5-highest-paying-trade-jobs-p03.jpg'), caption: 'Top 5 highest paying trade jobs — page 03' },
-      { src: img('amtec-social-guides-24-top-5-highest-paying-trade-jobs-p04.jpg'), caption: 'Top 5 highest paying trade jobs — page 04' },
-      { src: img('amtec-social-guides-25-top-5-highest-paying-trade-jobs-p05.jpg'), caption: 'Top 5 highest paying trade jobs — page 05' },
-      { src: img('amtec-social-guides-26-top-5-highest-paying-trade-jobs-p06.jpg'), caption: 'Top 5 highest paying trade jobs — page 06' },
-      { src: img('amtec-social-guides-27-top-5-highest-paying-trade-jobs-p07.jpg'), caption: 'Top 5 highest paying trade jobs — page 07' },
-      { src: img('amtec-social-guides-28-the-fight-for-fair-work-p01.jpg'), caption: 'The fight for fair work — page 01' },
-      { src: img('amtec-social-guides-29-the-fight-for-fair-work-p02.jpg'), caption: 'The fight for fair work — page 02' },
-      { src: img('amtec-social-guides-30-the-fight-for-fair-work-p03.jpg'), caption: 'The fight for fair work — page 03' },
-      { src: img('amtec-social-guides-31-the-fight-for-fair-work-p04.jpg'), caption: 'The fight for fair work — page 04' },
-      { src: img('amtec-social-guides-32-the-fight-for-fair-work-p05.jpg'), caption: 'The fight for fair work — page 05' },
+      {
+        doc: [
+          img('amtec-social-guides-01-5-highest-paying-careers-in-california-p01.jpg'),
+          img('amtec-social-guides-02-5-highest-paying-careers-in-california-p02.jpg'),
+          img('amtec-social-guides-03-5-highest-paying-careers-in-california-p03.jpg'),
+          img('amtec-social-guides-04-5-highest-paying-careers-in-california-p04.jpg'),
+          img('amtec-social-guides-05-5-highest-paying-careers-in-california-p05.jpg'),
+          img('amtec-social-guides-06-5-highest-paying-careers-in-california-p06.jpg'),
+          img('amtec-social-guides-07-5-highest-paying-careers-in-california-p07.jpg'),
+        ],
+        caption: '5 Highest Paying Careers in California',
+      },
+      {
+        doc: [
+          img('amtec-social-guides-08-how-to-find-a-career-you-love-p01.jpg'),
+          img('amtec-social-guides-09-how-to-find-a-career-you-love-p02.jpg'),
+          img('amtec-social-guides-10-how-to-find-a-career-you-love-p03.jpg'),
+          img('amtec-social-guides-11-how-to-find-a-career-you-love-p04.jpg'),
+          img('amtec-social-guides-12-how-to-find-a-career-you-love-p05.jpg'),
+          img('amtec-social-guides-13-how-to-find-a-career-you-love-p06.jpg'),
+          img('amtec-social-guides-14-how-to-find-a-career-you-love-p07.jpg'),
+        ],
+        caption: 'How to Find a Career You Love',
+      },
+      {
+        doc: [
+          img('amtec-social-guides-15-how-to-refer-someone-for-a-job-p01.jpg'),
+          img('amtec-social-guides-16-how-to-refer-someone-for-a-job-p02.jpg'),
+          img('amtec-social-guides-17-how-to-refer-someone-for-a-job-p03.jpg'),
+          img('amtec-social-guides-18-how-to-refer-someone-for-a-job-p04.jpg'),
+          img('amtec-social-guides-19-how-to-refer-someone-for-a-job-p05.jpg'),
+          img('amtec-social-guides-20-how-to-refer-someone-for-a-job-p06.jpg'),
+        ],
+        caption: 'How to Refer Someone for a Job',
+      },
+      {
+        doc: [
+          img('amtec-social-guides-21-top-5-highest-paying-trade-jobs-p01.jpg'),
+          img('amtec-social-guides-22-top-5-highest-paying-trade-jobs-p02.jpg'),
+          img('amtec-social-guides-23-top-5-highest-paying-trade-jobs-p03.jpg'),
+          img('amtec-social-guides-24-top-5-highest-paying-trade-jobs-p04.jpg'),
+          img('amtec-social-guides-25-top-5-highest-paying-trade-jobs-p05.jpg'),
+          img('amtec-social-guides-26-top-5-highest-paying-trade-jobs-p06.jpg'),
+          img('amtec-social-guides-27-top-5-highest-paying-trade-jobs-p07.jpg'),
+        ],
+        caption: 'Top 5 Highest Paying Trade Jobs',
+      },
+      {
+        doc: [
+          img('amtec-social-guides-28-the-fight-for-fair-work-p01.jpg'),
+          img('amtec-social-guides-29-the-fight-for-fair-work-p02.jpg'),
+          img('amtec-social-guides-30-the-fight-for-fair-work-p03.jpg'),
+          img('amtec-social-guides-31-the-fight-for-fair-work-p04.jpg'),
+          img('amtec-social-guides-32-the-fight-for-fair-work-p05.jpg'),
+        ],
+        caption: 'The Fight for Fair Work',
+      },
     ],
   },
   {
@@ -998,45 +1069,100 @@ export const work: WorkItem[] = [
     category: 'graphic-design',
     kind: 'carousel',
     slides: [
-      { src: img('amtec-print-01-amtec-vacation-brochure-redesign-2023-p01.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 01' },
-      { src: img('amtec-print-02-amtec-vacation-brochure-redesign-2023-p02.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 02' },
-      { src: img('amtec-print-03-amtec-vacation-brochure-redesign-2023-p03.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 03' },
-      { src: img('amtec-print-04-amtec-vacation-brochure-redesign-2023-p04.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 04' },
-      { src: img('amtec-print-05-amtec-vacation-brochure-redesign-2023-p05.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 05' },
-      { src: img('amtec-print-06-amtec-vacation-brochure-redesign-2023-p06.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 06' },
-      { src: img('amtec-print-07-amtec-vacation-brochure-redesign-2023-p07.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 07' },
-      { src: img('amtec-print-08-amtec-vacation-brochure-redesign-2023-p08.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 08' },
-      { src: img('amtec-print-09-amtec-vacation-brochure-redesign-2023-p09.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 09' },
-      { src: img('amtec-print-10-amtec-vacation-brochure-redesign-2023-p10.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 10' },
-      { src: img('amtec-print-11-amtec-vacation-brochure-redesign-2023-p11.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 11' },
-      { src: img('amtec-print-12-amtec-vacation-brochure-redesign-2023-p12.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 12' },
-      { src: img('amtec-print-13-amtec-vacation-brochure-redesign-2023-p13.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 13' },
-      { src: img('amtec-print-14-amtec-vacation-brochure-redesign-2023-p14.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 14' },
-      { src: img('amtec-print-15-amtec-vacation-brochure-redesign-2023-p15.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 15' },
-      { src: img('amtec-print-16-amtec-vacation-brochure-redesign-2023-p16.jpg'), caption: 'Amtec vacation brochure redesign 2023 — page 16' },
-      { src: img('amtec-print-17-construction-flyer-2023-p01.jpg'), caption: 'Construction flyer 2023 — page 01' },
-      { src: img('amtec-print-18-construction-flyer-2023-p02.jpg'), caption: 'Construction flyer 2023 — page 02' },
-      { src: img('amtec-print-19-tristaff-flyer-2024-p01.jpg'), caption: 'Tristaff flyer 2024 — page 01' },
-      { src: img('amtec-print-20-tristaff-flyer-2024-p02.jpg'), caption: 'Tristaff flyer 2024 — page 02' },
-      { src: img('amtec-print-21-halloween-networking-amtec-p01.jpg'), caption: 'Halloween networking amtec — page 01' },
-      { src: img('amtec-print-22-halloween-networking-amtec-p02.jpg'), caption: 'Halloween networking amtec — page 02' },
-      { src: img('amtec-print-23-halloween-networking-amtec-p03.jpg'), caption: 'Halloween networking amtec — page 03' },
-      { src: img('amtec-print-24-halloween-networking-amtec-p04.jpg'), caption: 'Halloween networking amtec — page 04' },
-      { src: img('amtec-print-25-halloween-networking-amtec-p05.jpg'), caption: 'Halloween networking amtec — page 05' },
-      { src: img('amtec-print-26-halloween-networking-amtec-p06.jpg'), caption: 'Halloween networking amtec — page 06' },
-      { src: img('amtec-print-27-halloween-networking-amtec-p07.jpg'), caption: 'Halloween networking amtec — page 07' },
-      { src: img('amtec-print-28-az-office-opening.jpg'), caption: 'Az office opening' },
-      { src: img('amtec-print-29-happy-boss-s-day-p01.jpg'), caption: 'Happy boss s day — page 01' },
-      { src: img('amtec-print-30-happy-boss-s-day-p02.jpg'), caption: 'Happy boss s day — page 02' },
-      { src: img('amtec-print-31-happy-boss-s-day-p03.jpg'), caption: 'Happy boss s day — page 03' },
-      { src: img('amtec-print-32-happy-boss-s-day-p04.jpg'), caption: 'Happy boss s day — page 04' },
-      { src: img('amtec-print-33-vaccinate-oc-flyer.jpg'), caption: 'Vaccinate oc flyer' },
-      { src: img('amtec-print-34-win-a-day-at-disneyland.jpg'), caption: 'Win a day at disneyland' },
-      { src: img('amtec-print-35-kevin-certificate-of-appreciation.jpg'), caption: 'Kevin certificate of appreciation' },
-      { src: img('amtec-print-36-people-s-care-case-study-p01.jpg'), caption: 'People s care case study — page 01' },
-      { src: img('amtec-print-37-people-s-care-case-study-p02.jpg'), caption: 'People s care case study — page 02' },
-      { src: img('amtec-print-38-people-s-care-case-study-p03.jpg'), caption: 'People s care case study — page 03' },
-      { src: img('amtec-print-39-yodump-sticker.jpg'), caption: 'Yodump sticker' },
+      {
+        doc: [
+          img('amtec-print-01-amtec-vacation-brochure-redesign-2023-p01.jpg'),
+          img('amtec-print-02-amtec-vacation-brochure-redesign-2023-p02.jpg'),
+          img('amtec-print-03-amtec-vacation-brochure-redesign-2023-p03.jpg'),
+          img('amtec-print-04-amtec-vacation-brochure-redesign-2023-p04.jpg'),
+          img('amtec-print-05-amtec-vacation-brochure-redesign-2023-p05.jpg'),
+          img('amtec-print-06-amtec-vacation-brochure-redesign-2023-p06.jpg'),
+          img('amtec-print-07-amtec-vacation-brochure-redesign-2023-p07.jpg'),
+          img('amtec-print-08-amtec-vacation-brochure-redesign-2023-p08.jpg'),
+          img('amtec-print-09-amtec-vacation-brochure-redesign-2023-p09.jpg'),
+          img('amtec-print-10-amtec-vacation-brochure-redesign-2023-p10.jpg'),
+          img('amtec-print-11-amtec-vacation-brochure-redesign-2023-p11.jpg'),
+          img('amtec-print-12-amtec-vacation-brochure-redesign-2023-p12.jpg'),
+          img('amtec-print-13-amtec-vacation-brochure-redesign-2023-p13.jpg'),
+          img('amtec-print-14-amtec-vacation-brochure-redesign-2023-p14.jpg'),
+          img('amtec-print-15-amtec-vacation-brochure-redesign-2023-p15.jpg'),
+          img('amtec-print-16-amtec-vacation-brochure-redesign-2023-p16.jpg'),
+        ],
+        caption: 'Vacation brochure redesign, 2023',
+      },
+      {
+        doc: [
+          img('amtec-print-17-construction-flyer-2023-p01.jpg'),
+          img('amtec-print-18-construction-flyer-2023-p02.jpg'),
+        ],
+        caption: 'Construction flyer, 2023',
+      },
+      {
+        doc: [
+          img('amtec-print-19-tristaff-flyer-2024-p01.jpg'),
+          img('amtec-print-20-tristaff-flyer-2024-p02.jpg'),
+        ],
+        caption: 'TriStaff flyer, 2024',
+      },
+      {
+        doc: [
+          img('amtec-print-21-halloween-networking-amtec-p01.jpg'),
+          img('amtec-print-22-halloween-networking-amtec-p02.jpg'),
+          img('amtec-print-23-halloween-networking-amtec-p03.jpg'),
+          img('amtec-print-24-halloween-networking-amtec-p04.jpg'),
+          img('amtec-print-25-halloween-networking-amtec-p05.jpg'),
+          img('amtec-print-26-halloween-networking-amtec-p06.jpg'),
+          img('amtec-print-27-halloween-networking-amtec-p07.jpg'),
+        ],
+        caption: 'Halloween Networking',
+      },
+      {
+        doc: [
+          img('amtec-print-28-az-office-opening.jpg'),
+        ],
+        caption: 'Arizona office grand opening',
+      },
+      {
+        doc: [
+          img('amtec-print-29-happy-boss-s-day-p01.jpg'),
+          img('amtec-print-30-happy-boss-s-day-p02.jpg'),
+          img('amtec-print-31-happy-boss-s-day-p03.jpg'),
+          img('amtec-print-32-happy-boss-s-day-p04.jpg'),
+        ],
+        caption: 'Happy Boss\'s Day',
+      },
+      {
+        doc: [
+          img('amtec-print-33-vaccinate-oc-flyer.jpg'),
+        ],
+        caption: 'Vaccinate OC flyer',
+      },
+      {
+        doc: [
+          img('amtec-print-34-win-a-day-at-disneyland.jpg'),
+        ],
+        caption: 'Win a Day at Disneyland',
+      },
+      {
+        doc: [
+          img('amtec-print-35-kevin-certificate-of-appreciation.jpg'),
+        ],
+        caption: 'Certificate of appreciation',
+      },
+      {
+        doc: [
+          img('amtec-print-36-people-s-care-case-study-p01.jpg'),
+          img('amtec-print-37-people-s-care-case-study-p02.jpg'),
+          img('amtec-print-38-people-s-care-case-study-p03.jpg'),
+        ],
+        caption: 'People\'s Care case study',
+      },
+      {
+        doc: [
+          img('amtec-print-39-yodump-sticker.jpg'),
+        ],
+        caption: 'Yodump sticker',
+      },
     ],
   },
   {
@@ -1100,7 +1226,6 @@ export const work: WorkItem[] = [
     slides: [
       { src: img('eager-eyes-vehicles-01-bug-d1-drbl.png'), caption: 'Bug' },
       { src: img('eager-eyes-vehicles-02-bus-truck-d3-drbl.jpg'), caption: 'Bus Truck' },
-      { src: img('eager-eyes-vehicles-03-vw-bus-truck.jpg'), caption: 'VW Bus Truck' },
       { src: img('eager-eyes-vehicles-04-porsche-911.jpg'), caption: 'Porsche 911' },
       { src: img('eager-eyes-vehicles-05-jag-e-star-wars-d3.jpg'), caption: 'Jag E Star Wars' },
     ],
@@ -1210,5 +1335,96 @@ export const work: WorkItem[] = [
     category: 'illustration',
     kind: 'image',
     src: img('door-bubbles.png'),
+  },
+
+  /* --------------------------- Client brand work --------------------------- */
+  {
+    id: 'evergreen',
+    title: 'Evergreen',
+    caption: 'Brand identity and campaign for an outdoor company',
+    category: 'graphic-design',
+    kind: 'carousel',
+    slides: [
+      { src: img('evergreen-01-evergreen-badge-mu1-1.png'), caption: 'Evergreen Badge' },
+      { src: img('evergreen-02-evergreen-badge-mu2.png'), caption: 'Evergreen Badge' },
+      { src: img('evergreen-03-evergreen-badge-mu2-1.png'), caption: 'Evergreen Badge' },
+      { src: img('evergreen-04-overlay-logomark.jpg'), caption: 'overlay logomark' },
+      { src: img('evergreen-05-overlay-1.jpg'), caption: 'overlay 1' },
+      { src: img('evergreen-06-overlay-2.jpg'), caption: 'overlay 2' },
+      { src: img('evergreen-07-overlay-2-1.png'), caption: 'overlay 2.1' },
+      { src: img('evergreen-08-overlay-3.jpg'), caption: 'overlay 3' },
+      { src: img('evergreen-09-overlay-3-1.png'), caption: 'overlay 3.1' },
+      { src: img('evergreen-10-overlay-4.jpg'), caption: 'overlay 4' },
+      { src: img('evergreen-11-insta-overlay-logomark-mu.jpg'), caption: 'insta overlay logomark' },
+      { src: img('evergreen-12-insta-overlay-1-mu.jpg'), caption: 'insta overlay 1' },
+      { src: img('evergreen-13-insta-overlay-2-1-mu.jpg'), caption: 'insta overlay 2.1' },
+      { src: img('evergreen-14-insta-overlay-3-1-mu.jpg'), caption: 'insta overlay 3.1' },
+      { src: img('evergreen-15-insta-overlay-4-mu.jpg'), caption: 'insta overlay 4' },
+      {
+        doc: [
+          img('evergreen-16-evergreen-style-guide-p01.jpg'),
+          img('evergreen-17-evergreen-style-guide-p02.jpg'),
+          img('evergreen-18-evergreen-style-guide-p03.jpg'),
+          img('evergreen-19-evergreen-style-guide-p04.jpg'),
+          img('evergreen-20-evergreen-style-guide-p05.jpg'),
+          img('evergreen-21-evergreen-style-guide-p06.jpg'),
+          img('evergreen-22-evergreen-style-guide-p07.jpg'),
+          img('evergreen-23-evergreen-style-guide-p08.jpg'),
+          img('evergreen-24-evergreen-style-guide-p09.jpg'),
+          img('evergreen-25-evergreen-style-guide-p10.jpg'),
+          img('evergreen-26-evergreen-style-guide-p11.jpg'),
+          img('evergreen-27-evergreen-style-guide-p12.jpg'),
+        ],
+        caption: 'evergreen style guide',
+      },
+    ],
+  },
+  {
+    id: 'ordinary-girl',
+    title: 'Ordinary Girl with an Extraordinary God',
+    caption: 'Book cover and identity',
+    category: 'graphic-design',
+    kind: 'carousel',
+    slides: [
+      { src: img('ordinary-girl-01-d2-1.png'), caption: 'D2.1' },
+      { src: img('ordinary-girl-02-ggj-d1.jpg'), caption: 'GGJ' },
+      { src: img('ordinary-girl-03-m2-1.jpg'), caption: 'M2.1' },
+      { src: img('ordinary-girl-04-m3-4.jpg'), caption: 'M3.4' },
+      {
+        doc: [
+          img('ordinary-girl-05-ordinary-girl-extraordinary-god-d3-4.jpg'),
+        ],
+        caption: 'ordinary girl extraordinary god d3 4',
+      },
+    ],
+  },
+  {
+    id: 'ray-johnson-memorial',
+    title: 'Ray Johnson Memorial',
+    caption: 'Memorial program and title card',
+    category: 'graphic-design',
+    kind: 'carousel',
+    slides: [
+      { src: img('ray-johnson-memorial-01-rmj-title-slide.png'), caption: 'rmj title slide' },
+      {
+        doc: [
+          img('ray-johnson-memorial-02-ray-johnson-s-memorial-program-p01.jpg'),
+          img('ray-johnson-memorial-03-ray-johnson-s-memorial-program-p02.jpg'),
+        ],
+        caption: 'ray johnson s memorial program',
+      },
+    ],
+  },
+  {
+    id: 'eager-eyes-brand',
+    title: 'Eager Eyes',
+    caption: 'My own studio identity, site and merch',
+    category: 'graphic-design',
+    kind: 'carousel',
+    slides: [
+      { src: img('eager-eyes-brand-01-eager-eyes-presentation.png'), caption: 'eager eyes presentation' },
+      { src: img('eager-eyes-brand-02-website-mu.jpg'), caption: 'Website' },
+      { src: img('eager-eyes-brand-03-eyeball-coaster.png'), caption: 'Eyeball Coaster' },
+    ],
   },
 ];
