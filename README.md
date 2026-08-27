@@ -1,16 +1,17 @@
 # Portfolio
 
-Zac Reinke's portfolio — [zacreinke.github.io/Portfolio](https://zacreinke.github.io/Portfolio/)
+Zac Reinke's portfolio — [www.zacreinke.com](https://www.zacreinke.com)
 
 Built with [Astro](https://astro.build) 7 and Tailwind CSS 4. Static output, no client
-framework. Deploys to GitHub Pages automatically on every push to `master`.
+framework. Deploys to GitHub Pages on every push to `master`, served from the custom
+domain in `public/CNAME`.
 
 ## Running it
 
 ```bash
 nvm use          # Node 22 (see .nvmrc)
 npm install
-npm run dev      # http://localhost:4321/Portfolio/
+npm run dev      # http://localhost:4321
 npm run build    # -> dist/
 npm run preview  # serve the built site
 ```
