@@ -15,6 +15,7 @@ type Frame = {
   slide: number;
   slides: number;
   ratio?: number;
+  parts?: { label: string; src: string }[];
 };
 
 const payload = document.getElementById('frames');
@@ -193,7 +194,7 @@ function render() {
     stage.append(video);
   } else if (frame.kind === 'model') {
     const box = document.createElement('div');
-    box.className = 'overflow-hidden rounded-tile bg-card';
+    box.className = 'relative overflow-hidden rounded-tile bg-card';
     fitBox(box, 1);
     const viewer = document.createElement('model-viewer');
     viewer.setAttribute('src', frame.src);
@@ -217,6 +218,27 @@ function render() {
     viewer.style.height = '100%';
     viewer.style.setProperty('--poster-color', 'transparent');
     box.append(viewer);
+
+    // Multi-part prints let you pick a body. A real <select> so phones get the
+    // native picker and it stays keyboard-reachable.
+    if (frame.parts && frame.parts.length > 1) {
+      const picker = document.createElement('select');
+      picker.className =
+        'label-caps absolute top-3 left-3 z-10 cursor-pointer rounded-full border border-line ' +
+        'bg-page/90 py-2 pr-8 pl-4 text-ink backdrop-blur-sm';
+      picker.setAttribute('aria-label', `Part of ${frame.title}`);
+      for (const part of frame.parts) {
+        const option = document.createElement('option');
+        option.value = part.src;
+        option.textContent = part.label;
+        picker.append(option);
+      }
+      picker.addEventListener('change', () => {
+        viewer.setAttribute('src', picker.value);
+      });
+      box.append(picker);
+    }
+
     stage.append(box);
     void loadViewer();
   } else if (frame.kind === 'embed') {

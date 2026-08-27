@@ -35,9 +35,13 @@ function img(name: string): ImageMetadata {
  * A carousel slide is either a still or an interactive model. Model slides
  * reference a GLB in public/models/ — see scripts/stl-to-glb.py.
  */
+/** One selectable body in the 3D viewer. */
+export type ModelPart = { label: string; file: string };
+
 export type Slide =
   | { src: ImageMetadata; caption: string }
-  | { model: string; caption: string };
+  /** A single GLB, or several parts offered in the viewer's dropdown. */
+  | { model: string | ModelPart[]; caption: string };
 
 export const isImageSlide = (s: Slide): s is { src: ImageMetadata; caption: string } =>
   'src' in s;
@@ -410,16 +414,43 @@ export const work: WorkItem[] = [
     title: 'VW Thing — Tooned',
     caption: 'Stylized Volkswagen Type 181 model',
     category: '3d',
-    kind: 'image',
-    src: img('vw-thing-tooned.jpg'),
+    kind: 'carousel',
+    slides: [
+      { src: img('vw-thing-tooned.jpg'), caption: 'VW Thing — Tooned — render' },
+      {
+        model: [
+          { label: 'Assembled', file: 'vw-thing-assembled.glb' },
+          { label: 'Body', file: 'vw-thing-body.glb' },
+          { label: 'Front seats', file: 'vw-thing-seats.glb' },
+          { label: 'Steering wheel', file: 'vw-thing-steering-wheel.glb' },
+          { label: 'Tire', file: 'vw-thing-tire.glb' },
+          { label: 'Rim', file: 'vw-thing-rim.glb' },
+        ],
+        caption: 'VW Thing — Tooned — interactive model',
+      },
+    ],
   },
   {
     id: 'stubby-rod',
     title: 'Stubby Rod',
     caption: 'Hot rod pencil holder',
     category: '3d',
-    kind: 'image',
-    src: img('stubby-rod-pencil-holder.png'),
+    kind: 'carousel',
+    slides: [
+      { src: img('stubby-rod-pencil-holder.png'), caption: 'Stubby Rod — render' },
+      {
+        model: [
+          { label: 'Assembled', file: 'stubby-rod-assembled.glb' },
+          { label: 'Pencil body', file: 'stubby-rod-body.glb' },
+          { label: 'Graphite tip', file: 'stubby-rod-graphite.glb' },
+          { label: 'Eraser', file: 'stubby-rod-eraser.glb' },
+          { label: 'Ferrule', file: 'stubby-rod-ferrule.glb' },
+          { label: 'Tire', file: 'stubby-rod-tire.glb' },
+          { label: 'Rim', file: 'stubby-rod-rim.glb' },
+        ],
+        caption: 'Stubby Rod — interactive model',
+      },
+    ],
   },
   {
     id: 'artemis-badge',
@@ -437,8 +468,17 @@ export const work: WorkItem[] = [
     title: 'Light of the World',
     caption: 'Cross shadow box',
     category: '3d',
-    kind: 'image',
-    src: img('light-of-the-world-cross-shadow-box.png'),
+    kind: 'carousel',
+    slides: [
+      { src: img('light-of-the-world-cross-shadow-box.png'), caption: 'Light of the World — render' },
+      {
+        model: [
+          { label: 'Shadow box', file: 'cross-shadow-box-box.glb' },
+          { label: 'Cross', file: 'cross-shadow-box-cross.glb' },
+        ],
+        caption: 'Light of the World — interactive model',
+      },
+    ],
   },
   {
     id: 'catalina-planter',

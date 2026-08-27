@@ -26,6 +26,8 @@ type Frame = {
   slide: number;
   slides: number;
   ratio?: number;
+  /** Selectable bodies for a model frame; one entry means no dropdown. */
+  parts?: { label: string; src: string }[];
 };
 
 /** Animated GIFs and SVGs are passed through untouched; sharp would flatten them. */
@@ -77,15 +79,21 @@ for (const item of interleaved) {
     const total = item.slides.length;
     for (const [i, slide] of item.slides.entries()) {
       if (!isImageSlide(slide)) {
+        const parts = (
+          typeof slide.model === 'string'
+            ? [{ label: 'Model', file: slide.model }]
+            : slide.model
+        ).map((part) => ({ label: part.label, src: withBase(`models/${part.file}`) }));
         frames.push({
           ...shared,
           caption: slide.caption || item.caption,
           kind: 'model',
-          src: withBase(`models/${slide.model}`),
+          src: parts[0]!.src,
           width: 1,
           height: 1,
           slide: i + 1,
           slides: total,
+          parts,
         });
         continue;
       }

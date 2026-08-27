@@ -48,6 +48,20 @@ slides: [
 ]
 ```
 
+A multi-part print offers its bodies in a dropdown instead, first entry first:
+
+```ts
+{
+  model: [
+    { label: 'Assembled', file: 'vw-thing-assembled.glb' },
+    { label: 'Body',      file: 'vw-thing-body.glb' },
+  ],
+  caption: 'VW Thing — Tooned — interactive model',
+}
+```
+
+Only the selected body is fetched, so a seven-part model costs one part to open.
+
 GLBs live in `public/models/`. To add one, convert an STL with Blender:
 
 ```bash
@@ -56,8 +70,9 @@ GLBs live in `public/models/`. To add one, convert an STL with Blender:
 ```
 
 The second argument is a triangle budget — anything above it gets decimated.
-25–40k keeps files small without visible loss. Pass several STLs to join a
-multi-part print, as long as the files already share a coordinate space.
+20–45k keeps files small without visible loss. Pass several STLs to join them:
+the parts exported from one design share a coordinate space, which is how the
+"Assembled" entries are built.
 
 Exported without Draco deliberately: the decoder is a ~250KB download and these
 meshes are 68–440KB uncompressed, so it would cost more than it saves. STL
