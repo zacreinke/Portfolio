@@ -8,7 +8,7 @@ type Frame = {
   categoryLabel: string;
   title: string;
   caption: string;
-  kind: 'image' | 'video' | 'embed';
+  kind: 'image' | 'video' | 'embed' | 'model';
   src: string;
   width: number;
   height: number;
@@ -140,6 +140,14 @@ function autoplay(src: string): string {
 let refit: (() => void) | null = null;
 
 /**
+ * model-viewer is ~283KB gzipped, so it is only fetched the first time someone
+ * actually opens a model. The element upgrades retroactively once the module
+ * defines it, so it can be in the DOM before this resolves.
+ */
+let viewerLoaded: Promise<unknown> | null = null;
+const loadViewer = () => (viewerLoaded ??= import('@google/model-viewer'));
+
+/**
  * Size an embed to fit inside the stage.
  *
  * CSS can't do this on its own here: a div has no intrinsic size, so one axis
@@ -183,6 +191,34 @@ function render() {
     video.style.aspectRatio = `${frame.width} / ${frame.height}`;
     video.className = 'max-h-full max-w-full rounded-tile object-contain';
     stage.append(video);
+  } else if (frame.kind === 'model') {
+    const box = document.createElement('div');
+    box.className = 'overflow-hidden rounded-tile bg-card';
+    fitBox(box, 1);
+    const viewer = document.createElement('model-viewer');
+    viewer.setAttribute('src', frame.src);
+    viewer.setAttribute('alt', frame.title);
+    // The viewer only ever exists inside an already-open lightbox, so there is
+    // nothing to defer for — and lazy loading stalls outright when the
+    // element's intersection never gets reported.
+    viewer.setAttribute('loading', 'eager');
+    viewer.setAttribute('reveal', 'auto');
+    viewer.setAttribute('camera-controls', '');
+    viewer.setAttribute('auto-rotate', '');
+    viewer.setAttribute('rotation-per-second', '18deg');
+    viewer.setAttribute('interaction-prompt', 'none');
+    viewer.setAttribute('environment-image', 'neutral');
+    // The neutral environment is bright; pull exposure back so the grey resin
+    // material keeps its form instead of blowing out to white.
+    viewer.setAttribute('exposure', '0.75');
+    viewer.setAttribute('shadow-intensity', '1');
+    viewer.setAttribute('touch-action', 'none');
+    viewer.style.width = '100%';
+    viewer.style.height = '100%';
+    viewer.style.setProperty('--poster-color', 'transparent');
+    box.append(viewer);
+    stage.append(box);
+    void loadViewer();
   } else if (frame.kind === 'embed') {
     // Wrap the iframe in a sized box: an iframe has no intrinsic size, so
     // without one it collapses the same way a metadata-less <video> does.
@@ -238,6 +274,7 @@ function render() {
   for (const i of [cursor - 1, cursor + 1]) {
     const near = frames[sequence[i]!];
     if (near?.kind === 'image') new Image().src = near.src;
+    if (near?.kind === 'model') void loadViewer();
   }
 }
 

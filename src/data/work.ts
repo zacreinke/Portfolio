@@ -31,7 +31,16 @@ function img(name: string): ImageMetadata {
   return found;
 }
 
-export type Slide = { src: ImageMetadata; caption: string };
+/**
+ * A carousel slide is either a still or an interactive model. Model slides
+ * reference a GLB in public/models/ — see scripts/stl-to-glb.py.
+ */
+export type Slide =
+  | { src: ImageMetadata; caption: string }
+  | { model: string; caption: string };
+
+export const isImageSlide = (s: Slide): s is { src: ImageMetadata; caption: string } =>
+  'src' in s;
 
 type Base = {
   id: string;
@@ -379,16 +388,22 @@ export const work: WorkItem[] = [
     title: 'Baby Artemis',
     caption: 'Artemis rocket model with a collapsible exhaust flame',
     category: '3d',
-    kind: 'image',
-    src: img('baby-artemis-with-collapsible-exhaust-flame.jpg'),
+    kind: 'carousel',
+    slides: [
+      { src: img('baby-artemis-with-collapsible-exhaust-flame.jpg'), caption: 'Baby Artemis — render' },
+      { model: 'baby-artemis.glb', caption: 'Baby Artemis — interactive model' },
+    ],
   },
   {
     id: 'starship-mini',
     title: 'Starship Mini',
     caption: 'Starship model with a collapsible exhaust flame',
     category: '3d',
-    kind: 'image',
-    src: img('starship-mini-with-collapsible-exhaust-flame.jpg'),
+    kind: 'carousel',
+    slides: [
+      { src: img('starship-mini-with-collapsible-exhaust-flame.jpg'), caption: 'Starship Mini — render' },
+      { model: 'starship-mini.glb', caption: 'Starship Mini — interactive model' },
+    ],
   },
   {
     id: 'vw-thing',
@@ -411,8 +426,11 @@ export const work: WorkItem[] = [
     title: 'Artemis Badge',
     caption: 'Printable Artemis mission badge',
     category: '3d',
-    kind: 'image',
-    src: img('artemis-badge.jpg'),
+    kind: 'carousel',
+    slides: [
+      { src: img('artemis-badge.jpg'), caption: 'Artemis Badge — render' },
+      { model: 'artemis-badge.glb', caption: 'Artemis Badge — interactive model' },
+    ],
   },
   {
     id: 'cross-shadow-box',
@@ -427,8 +445,11 @@ export const work: WorkItem[] = [
     title: 'The Catalina Planter',
     caption: 'Planter design',
     category: '3d',
-    kind: 'image',
-    src: img('the-catalina-planter.jpg'),
+    kind: 'carousel',
+    slides: [
+      { src: img('the-catalina-planter.jpg'), caption: 'The Catalina Planter — render' },
+      { model: 'catalina-planter.glb', caption: 'The Catalina Planter — interactive model' },
+    ],
   },
   {
     id: 'jet-engine-stand',

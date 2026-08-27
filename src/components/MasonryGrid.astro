@@ -2,7 +2,7 @@
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import WorkTile from './WorkTile.astro';
-import { work } from '../data/work';
+import { work, isImageSlide } from '../data/work';
 import { categories, categoryLabel } from '../data/site';
 import { withBase } from '../lib/url';
 
@@ -17,7 +17,7 @@ type Frame = {
   categoryLabel: string;
   title: string;
   caption: string;
-  kind: 'image' | 'video' | 'embed';
+  kind: 'image' | 'video' | 'embed' | 'model';
   /** Full-size source for the lightbox. */
   src: string;
   width: number;
@@ -76,6 +76,19 @@ for (const item of interleaved) {
   if (item.kind === 'carousel') {
     const total = item.slides.length;
     for (const [i, slide] of item.slides.entries()) {
+      if (!isImageSlide(slide)) {
+        frames.push({
+          ...shared,
+          caption: slide.caption || item.caption,
+          kind: 'model',
+          src: withBase(`models/${slide.model}`),
+          width: 1,
+          height: 1,
+          slide: i + 1,
+          slides: total,
+        });
+        continue;
+      }
       const full = await sized(slide.src, 1600);
       frames.push({
         ...shared,

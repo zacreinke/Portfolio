@@ -31,10 +31,40 @@ Four kinds of item are supported:
 | `image` | a single still | `src` |
 | `carousel` | a project with several shots | `slides: [{ src, caption }]` |
 | `video` | a self-hosted MP4 in `public/work/video/` | `src`, `poster` |
-| `embed` | a hosted player (Spotify, YouTube, Vimeo) | `html`, `poster` |
+| `embed` | a hosted player (SoundCloud, YouTube) | `embed`, `poster`, optional `ratio` |
 
 Carousel slides are flattened into the lightbox's linear sequence, so one set of
 arrows walks every frame in the active tab.
+
+## Interactive 3D
+
+A carousel slide can be a model instead of a still — the render stays as the
+cover, the model sits behind it:
+
+```ts
+slides: [
+  { src: img('starship-mini.jpg'), caption: 'Starship Mini — render' },
+  { model: 'starship-mini.glb',    caption: 'Starship Mini — interactive model' },
+]
+```
+
+GLBs live in `public/models/`. To add one, convert an STL with Blender:
+
+```bash
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup \
+  --python scripts/stl-to-glb.py -- public/models/thing.glb 40000 ~/path/Thing.stl
+```
+
+The second argument is a triangle budget — anything above it gets decimated.
+25–40k keeps files small without visible loss. Pass several STLs to join a
+multi-part print, as long as the files already share a coordinate space.
+
+Exported without Draco deliberately: the decoder is a ~250KB download and these
+meshes are 68–440KB uncompressed, so it would cost more than it saves. STL
+carries no colour, so every model gets the same neutral resin material.
+
+`@google/model-viewer` is ~283KB gzipped and is code-split into its own chunk —
+it is only fetched when someone actually opens a model, or arrows next to one.
 
 Tabs come from `categories` in `src/data/site.ts`. A category with no items shows a
 "coming soon" state instead of an empty grid.
