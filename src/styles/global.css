@@ -29,6 +29,19 @@
   --container-site: 1280px;
 }
 
+/* Corner radius of the card, eased down as the viewport narrows — 48px reads
+   as a soft frame on a desktop but swallows the corners of a phone. The
+   loader reads the same variable so the two always agree. */
+:root {
+  --shell-radius: 24px;
+}
+@media (min-width: 640px) {
+  :root { --shell-radius: 32px; }
+}
+@media (min-width: 1024px) {
+  :root { --shell-radius: 48px; }
+}
+
 @layer base {
   *,
   *::before,
@@ -53,9 +66,8 @@
   }
 
   body {
-    /* The page sits on black; the card below carries the page colour. */
+    /* Only the frame lives out here; the card below carries the page colour. */
     background: var(--color-ink);
-    padding: 8px;
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: 14px;
@@ -77,14 +89,19 @@
      the 8px frame. Modal <dialog> lives in the top layer, so the lightbox is
      unaffected by this clip and still covers the whole viewport. */
   .shell {
+    position: fixed;
+    z-index: 0;
     display: flex;
-    overflow: hidden;
-    min-height: calc(100vh - 16px);
-    /* dvh where supported, so mobile browser chrome doesn't overshoot. */
-    min-height: calc(100dvh - 16px);
+    /* Pinned to the viewport so the 8px frame stays on all four sides while
+       the page scrolls inside the card, rather than the top edge sliding away.
+       Being fixed also makes the height definite, so no vh/dvh guesswork. */
+    inset: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
     flex-direction: column;
-    border-radius: 48px;
+    border-radius: var(--shell-radius);
     background: var(--color-page);
+    overscroll-behavior: contain;
   }
 
   /* Section eyebrow / small caps label — resume h2 treatment. */

@@ -26,6 +26,9 @@ const { frames, emptyCategories } = JSON.parse(payload.textContent) as {
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
+/** The card scrolls, not the document — so that is what the lightbox locks. */
+const scroller = document.querySelector<HTMLElement>('.shell');
+
 const tabsBar = $('tabs');
 const tabs = [...tabsBar.querySelectorAll<HTMLButtonElement>('[data-filter]')];
 const tiles = [...document.querySelectorAll<HTMLElement>('[data-tile]')];
@@ -250,7 +253,7 @@ function open(frameIndex: number) {
   // A closed <dialog> is display:none, so the stage measured 0x0 during
   // render(). Now that it is in the top layer, size the embed for real.
   refit?.();
-  document.body.style.overflow = 'hidden';
+  if (scroller) scroller.style.overflowY = 'hidden';
 }
 
 function step(by: number) {
@@ -287,7 +290,7 @@ dialog.addEventListener('close', () => {
   if (dialog.open) return;
   refit = null;
   stage.replaceChildren();
-  document.body.style.overflow = '';
+  if (scroller) scroller.style.overflowY = '';
 });
 
 /* --------------------------------- masonry --------------------------------- */
@@ -363,7 +366,9 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObse
 
   const observer = new IntersectionObserver(
     (entries) => revealBatch(entries.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement)),
-    { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+    // The card scrolls, not the document, so that is the root to observe
+    // against — with root:null the viewport is used and nothing fires here.
+    { root: scroller, rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
   );
 
   // IntersectionObserver reports position at one instant. Images finishing and
@@ -380,11 +385,29 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObse
   };
 
   revealInView = () => {
+    // Same trigger line as the observer's -8% bottom margin, so a tile reveals
+    // at the same point whichever path gets to it first.
+    const trigger = innerHeight * 0.92;
     const pending = tiles.filter(
-      (t) => !t.hidden && !t.classList.contains('is-visible') && t.getBoundingClientRect().top < innerHeight,
+      (t) => !t.hidden && !t.classList.contains('is-visible') && t.getBoundingClientRect().top < trigger,
     );
     if (pending.length) revealBatch(pending);
   };
+
+  // Safety net. IntersectionObserver reports a position at one instant and can
+  // miss entries under a throttled or backgrounded tab; a cheap throttled sweep
+  // guarantees nothing is left stranded at opacity 0.
+  let lastSweep = 0;
+  (scroller ?? window).addEventListener(
+    'scroll',
+    () => {
+      const now = performance.now();
+      if (now - lastSweep < 150) return;
+      lastSweep = now;
+      revealInView();
+    },
+    { passive: true },
+  );
 
   // Wait for the intro to clear — otherwise the tiles above the fold finish
   // fading in while the red overlay is still covering them.
