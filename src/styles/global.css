@@ -51,6 +51,16 @@
 
   html {
     scroll-behavior: smooth;
+    /* Reserve the scrollbar so the frame doesn't shift when the page locks. */
+    scrollbar-gutter: stable;
+  }
+
+  /* Lock the page while the viewer is open. Attribute-driven, not event-driven:
+     `open` is removed synchronously by close(), whereas a `close` event can be
+     delayed or dropped (a backgrounded tab never dispatches one) — which would
+     otherwise strand the page unscrollable. */
+  body:has(#lightbox[open]) {
+    overflow: hidden;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -66,8 +76,9 @@
   }
 
   body {
-    /* Only the frame lives out here; the card below carries the page colour. */
-    background: var(--color-ink);
+    background: var(--color-page);
+    /* Nothing should ever push the document sideways under the frame. */
+    overflow-x: hidden;
     color: var(--color-ink);
     font-family: var(--font-body);
     font-size: 14px;
@@ -88,20 +99,26 @@
      overflow:hidden keeps hover scales and the carousel fan from bleeding into
      the 8px frame. Modal <dialog> lives in the top layer, so the lightbox is
      unaffected by this clip and still covers the whole viewport. */
+  /* The page scrolls natively; .shell only carries the sticky-footer column. */
   .shell {
-    position: fixed;
-    z-index: 0;
     display: flex;
-    /* Pinned to the viewport so the 8px frame stays on all four sides while
-       the page scrolls inside the card, rather than the top edge sliding away.
-       Being fixed also makes the height definite, so no vh/dvh guesswork. */
-    inset: 8px;
-    overflow-x: hidden;
-    overflow-y: auto;
+    min-height: 100dvh;
     flex-direction: column;
+  }
+
+  /* The frame is a mask, not a container: a fixed rounded rectangle whose
+     box-shadow floods everything outside it with ink. The shadow follows the
+     radius, so it reads as a rounded window over the page. Nothing is clipped
+     or re-parented — the document keeps scrolling normally underneath, which
+     is what keeps native scrolling, scroll restoration and IntersectionObserver
+     behaving. Sits above the intro and below the modal lightbox. */
+  .frame {
+    position: fixed;
+    z-index: 60;
+    inset: 8px;
     border-radius: var(--shell-radius);
-    background: var(--color-page);
-    overscroll-behavior: contain;
+    box-shadow: 0 0 0 100vmax var(--color-ink);
+    pointer-events: none;
   }
 
   /* Section eyebrow / small caps label — resume h2 treatment. */

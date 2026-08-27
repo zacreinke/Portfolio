@@ -51,10 +51,9 @@ const outAt = nameAt + 0.62;
 <style define:vars={{ hold: `${HOLD}s` }}>
   #loader {
     position: fixed;
-    /* Sits exactly on the card, not over the black frame. */
-    inset: 8px;
-    border-radius: var(--shell-radius);
-    z-index: 100;
+    /* Full bleed — the frame sits above and masks it to the rounded window. */
+    inset: 0;
+    z-index: 50;
     display: grid;
     place-items: center;
     background: #ff3e3e;
