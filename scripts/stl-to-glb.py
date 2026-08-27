@@ -39,12 +39,17 @@ if longest:
 bpy.ops.object.transform_apply(location=True, rotation=False, scale=True)
 bpy.ops.object.shade_smooth()
 
-# STL carries no colour, so give every model the same neutral resin material.
-mat = bpy.data.materials.new("resin")
+# STL carries no colour, so every model gets the same material: a matte
+# filament finish. High roughness with the specular pulled down reads like
+# printed PLA rather than moulded plastic, and it keeps the form legible —
+# a glossy surface blows out to white under model-viewer's neutral lighting.
+mat = bpy.data.materials.new("filament")
 mat.use_nodes = True
 shader = mat.node_tree.nodes["Principled BSDF"]
 shader.inputs["Base Color"].default_value = (0.58, 0.59, 0.63, 1)
-shader.inputs["Roughness"].default_value = 0.42
+shader.inputs["Roughness"].default_value = 0.92
+shader.inputs["Specular"].default_value = 0.22
+shader.inputs["Metallic"].default_value = 0.0
 ob.data.materials.append(mat)
 
 bpy.ops.export_scene.gltf(filepath=dst, export_format='GLB', export_apply=True)
