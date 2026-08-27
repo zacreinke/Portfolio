@@ -10,7 +10,6 @@ type Frame = {
   caption: string;
   kind: 'image' | 'video' | 'embed';
   src: string;
-  thumb: string;
   width: number;
   height: number;
   slide: number;
@@ -97,6 +96,23 @@ tabsBar.addEventListener('keydown', (e) => {
   to.focus();
 });
 
+/* --------------------------- tab overflow affordance ----------------------- */
+
+// Seven tabs outrun a narrow viewport. Show the fade only while there is more
+// row to reach, and drop it once you get to the end.
+const tabsFade = document.getElementById('tabs-fade');
+if (tabsFade) {
+  const syncFade = () => {
+    const max = tabsBar.scrollWidth - tabsBar.clientWidth;
+    const more = max > 1 && tabsBar.scrollLeft < max - 1;
+    tabsFade.style.opacity = more ? '1' : '0';
+  };
+  tabsBar.addEventListener('scroll', syncFade, { passive: true });
+  addEventListener('resize', syncFade);
+  addEventListener('load', syncFade);
+  syncFade();
+}
+
 /* ------------------------------- lightbox --------------------------------- */
 
 function render() {
@@ -113,7 +129,7 @@ function render() {
     // poster's ratio up front — otherwise it lays out at 300x150 (or collapses)
     // and portrait footage gets squashed.
     video.style.aspectRatio = `${frame.width} / ${frame.height}`;
-    video.className = 'max-h-full max-w-full rounded-card object-contain';
+    video.className = 'max-h-full max-w-full rounded-tile object-contain';
     stage.append(video);
   } else if (frame.kind === 'embed') {
     // Wrap the iframe in a ratio box: an iframe has no intrinsic size, so
@@ -121,7 +137,7 @@ function render() {
     const box = document.createElement('div');
     // Solid ground: a player that is slow or blocked would otherwise let the
     // blurred page show straight through the frame.
-    box.className = 'w-full max-w-5xl overflow-hidden rounded-card bg-ink';
+    box.className = 'w-full max-w-5xl overflow-hidden rounded-tile bg-ink';
     box.style.aspectRatio = String(frame.ratio ?? 16 / 9);
     const iframe = document.createElement('iframe');
     iframe.src = frame.src;
@@ -138,7 +154,12 @@ function render() {
     image.width = frame.width;
     image.height = frame.height;
     image.decoding = 'async';
-    image.className = 'max-h-full max-w-full rounded-card object-contain';
+    // w-auto/h-auto matter: the width/height attributes above would otherwise
+    // give the box a definite size on both axes, so max-w/max-h would clamp
+    // each independently and object-contain would letterbox — leaving the
+    // artwork square-cornered inside a rounded box. Auto lets the intrinsic
+    // ratio drive the box, so the radius lands on the image itself.
+    image.className = 'h-auto w-auto max-h-full max-w-full rounded-tile object-contain';
     stage.append(image);
   }
 
@@ -186,7 +207,7 @@ function step(by: number) {
 
 for (const tile of tiles) {
   tile.querySelector('[data-open]')?.addEventListener('click', () => {
-    open(Number(tile.dataset.index) + Number(tile.dataset.offset ?? 0));
+    open(Number(tile.dataset.index));
   });
 }
 
@@ -205,49 +226,13 @@ dialog.addEventListener('click', (e) => {
 });
 
 dialog.addEventListener('close', () => {
+  // Only tear down if the dialog really closed. A spurious `close` — Chrome
+  // emits one when the top layer is disturbed, e.g. by a DevTools-protocol
+  // screenshot — would otherwise blank a lightbox that is still on screen.
+  if (dialog.open) return;
   stage.replaceChildren();
   document.body.style.overflow = '';
 });
-
-/* ------------------------ in-tile carousel paging -------------------------- */
-
-// Page a carousel inside its tile, without opening the lightbox. Each tile
-// tracks its own offset from the item's first frame.
-for (const tile of tiles) {
-  const total = Number(tile.dataset.slides ?? 1);
-  if (total < 2) continue;
-
-  const base = Number(tile.dataset.index);
-  const cover = tile.querySelector<HTMLImageElement>('[data-cover]');
-  if (!cover) continue;
-
-  let at = 0;
-  const page = (by: number) => {
-    at = (at + by + total) % total;
-    const frame = frames[base + at];
-    if (!frame) return;
-    // srcset would otherwise keep overriding the src we just set.
-    cover.removeAttribute('srcset');
-    cover.removeAttribute('sizes');
-    cover.src = frame.thumb;
-    cover.alt = frame.caption;
-  };
-
-  for (const [sel, dir] of [['[data-tile-prev]', -1], ['[data-tile-next]', 1]] as const) {
-    tile.querySelector(sel)?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      page(dir);
-    });
-  }
-
-  // Opening the lightbox should start on whatever slide is showing.
-  tile.querySelector('[data-open]')?.addEventListener(
-    'click',
-    () => { tile.dataset.offset = String(at); },
-    true,
-  );
-}
 
 /* ------------------------------ scroll reveal ------------------------------ */
 

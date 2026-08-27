@@ -18,6 +18,9 @@ const cover: ImageMetadata =
 const slideCount = item.kind === 'carousel' ? item.slides.length : 1;
 const isPlayable = item.kind === 'video' || item.kind === 'embed';
 
+/** Two more slides peek out from behind the cover on hover, like a fanned deck. */
+const fan = item.kind === 'carousel' ? item.slides.slice(1, 3).map((s) => s.src) : [];
+
 // sharp would flatten an animated GIF to its first frame, so pass those
 // (and SVGs) straight through instead of running them through <Image>.
 const passthrough = cover.format === 'gif' || cover.format === 'svg';
@@ -31,8 +34,21 @@ const mediaClass =
   data-tile
   data-index={index}
   data-category={item.category}
-  data-slides={slideCount}
 >
+  {
+    fan.map((src, i) => (
+      <Image
+        src={src}
+        alt=""
+        aria-hidden="true"
+        widths={[400]}
+        loading="lazy"
+        decoding="async"
+        class={`fan fan-${i + 1} pointer-events-none absolute inset-0 size-full rounded-tile border border-line bg-card object-cover`}
+      />
+    ))
+  }
+
   <button
     type="button"
     data-open
@@ -48,7 +64,6 @@ const mediaClass =
           height={cover.height}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
-          data-cover
           class={mediaClass}
         />
       ) : (
@@ -59,7 +74,6 @@ const mediaClass =
           sizes="(min-width: 1280px) 300px, (min-width: 1024px) 32vw, (min-width: 640px) 48vw, 92vw"
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
-          data-cover
           class={mediaClass}
         />
       )
@@ -81,38 +95,9 @@ const mediaClass =
   {/* Count badge — a fixed circle, so 1 and 12 render at the same size. */}
   {
     slideCount > 1 && (
-      <span class="pointer-events-none absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-full bg-card/90 text-[11px] font-semibold tabular-nums backdrop-blur-sm">
+      <span class="pointer-events-none absolute top-2.5 right-2.5 z-10 flex size-7 items-center justify-center rounded-full bg-card/90 text-[11px] font-semibold tabular-nums backdrop-blur-sm">
         {slideCount}
       </span>
-    )
-  }
-
-  {/* Carousel arrows — siblings of the open button, not nested inside it, so the
-      markup stays valid. They page through the slides in place on hover. */}
-  {
-    slideCount > 1 && (
-      <>
-        <button
-          type="button"
-          data-tile-prev
-          aria-label="Previous image"
-          class="absolute top-1/2 left-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-card/90 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
-        >
-          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          data-tile-next
-          aria-label="Next image"
-          class="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-card/90 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
-        >
-          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
-      </>
     )
   }
 </figure>

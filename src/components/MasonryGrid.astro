@@ -20,8 +20,6 @@ type Frame = {
   kind: 'image' | 'video' | 'embed';
   /** Full-size source for the lightbox. */
   src: string;
-  /** Tile-size source, used when paging a carousel in place. */
-  thumb: string;
   width: number;
   height: number;
   /** 1-based position within the parent item, and how many it has. */
@@ -65,13 +63,11 @@ for (const item of work) {
     const total = item.slides.length;
     for (const [i, slide] of item.slides.entries()) {
       const full = await sized(slide.src, 1600);
-      const thumb = await sized(slide.src, 800);
       frames.push({
         ...shared,
         caption: slide.caption || item.caption,
         kind: 'image',
         src: full.url,
-        thumb: thumb.url,
         width: full.width,
         height: full.height,
         slide: i + 1,
@@ -80,39 +76,33 @@ for (const item of work) {
     }
   } else if (item.kind === 'image') {
     const full = await sized(item.src, 1600);
-    const thumb = await sized(item.src, 800);
     frames.push({
       ...shared,
       caption: item.caption,
       kind: 'image',
       src: full.url,
-      thumb: thumb.url,
       width: full.width,
       height: full.height,
       slide: 1,
       slides: 1,
     });
   } else if (item.kind === 'video') {
-    const thumb = await sized(item.poster, 800);
     frames.push({
       ...shared,
       caption: item.caption,
       kind: 'video',
       src: withBase(item.src),
-      thumb: thumb.url,
       width: item.poster.width,
       height: item.poster.height,
       slide: 1,
       slides: 1,
     });
   } else {
-    const thumb = await sized(item.poster, 800);
     frames.push({
       ...shared,
       caption: item.caption,
       kind: 'embed',
       src: item.embed,
-      thumb: thumb.url,
       width: item.poster.width,
       height: item.poster.height,
       slide: 1,
@@ -127,7 +117,7 @@ const emptyCategories = categories
   .map((c) => c.id);
 ---
 
-<section id="work" class="mx-auto max-w-site px-5 pt-10 sm:px-8" aria-live="polite">
+<section id="work" class="mx-auto max-w-site px-5 pt-4 sm:px-8" aria-live="polite">
   <div class="masonry">
     {tiles.map(({ item, index }, i) => <WorkTile item={item} index={index} eager={i < 8} />)}
   </div>
