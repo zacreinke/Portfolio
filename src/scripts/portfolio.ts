@@ -10,11 +10,12 @@ type Frame = {
   caption: string;
   kind: 'image' | 'video' | 'embed';
   src: string;
+  thumb: string;
   width: number;
   height: number;
   slide: number;
   slides: number;
-  html?: string;
+  ratio?: number;
 };
 
 const payload = document.getElementById('frames');
@@ -44,6 +45,9 @@ const btnClose = $<HTMLButtonElement>('lb-close');
 
 /* ------------------------------- filtering -------------------------------- */
 
+/** Assigned once the reveal observer is armed; a no-op before that. */
+let revealInView: () => void = () => {};
+
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
 let sequence: number[] = frames.map((_, i) => i);
@@ -70,6 +74,11 @@ function applyFilter(next: string) {
   }, []);
 
   history.replaceState(null, '', next === 'all' ? location.pathname : `#${next}`);
+
+  // Filtering reflows the columns, so tiles that were below the fold a moment
+  // ago may now be on screen. Called synchronously rather than via rAF, which
+  // never fires while the tab is in the background.
+  revealInView();
 }
 
 tabsBar.addEventListener('click', (e) => {
@@ -106,8 +115,22 @@ function render() {
     video.style.aspectRatio = `${frame.width} / ${frame.height}`;
     video.className = 'max-h-full max-w-full rounded-card object-contain';
     stage.append(video);
-  } else if (frame.kind === 'embed' && frame.html) {
-    stage.innerHTML = frame.html;
+  } else if (frame.kind === 'embed') {
+    // Wrap the iframe in a ratio box: an iframe has no intrinsic size, so
+    // without one it collapses the same way a metadata-less <video> does.
+    const box = document.createElement('div');
+    // Solid ground: a player that is slow or blocked would otherwise let the
+    // blurred page show straight through the frame.
+    box.className = 'w-full max-w-5xl overflow-hidden rounded-card bg-ink';
+    box.style.aspectRatio = String(frame.ratio ?? 16 / 9);
+    const iframe = document.createElement('iframe');
+    iframe.src = frame.src;
+    iframe.title = frame.title;
+    iframe.className = 'size-full border-0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture';
+    iframe.allowFullscreen = true;
+    box.append(iframe);
+    stage.append(box);
   } else {
     const image = new Image();
     image.src = frame.src;
@@ -163,7 +186,7 @@ function step(by: number) {
 
 for (const tile of tiles) {
   tile.querySelector('[data-open]')?.addEventListener('click', () => {
-    open(Number(tile.dataset.index));
+    open(Number(tile.dataset.index) + Number(tile.dataset.offset ?? 0));
   });
 }
 
@@ -185,6 +208,100 @@ dialog.addEventListener('close', () => {
   stage.replaceChildren();
   document.body.style.overflow = '';
 });
+
+/* ------------------------ in-tile carousel paging -------------------------- */
+
+// Page a carousel inside its tile, without opening the lightbox. Each tile
+// tracks its own offset from the item's first frame.
+for (const tile of tiles) {
+  const total = Number(tile.dataset.slides ?? 1);
+  if (total < 2) continue;
+
+  const base = Number(tile.dataset.index);
+  const cover = tile.querySelector<HTMLImageElement>('[data-cover]');
+  if (!cover) continue;
+
+  let at = 0;
+  const page = (by: number) => {
+    at = (at + by + total) % total;
+    const frame = frames[base + at];
+    if (!frame) return;
+    // srcset would otherwise keep overriding the src we just set.
+    cover.removeAttribute('srcset');
+    cover.removeAttribute('sizes');
+    cover.src = frame.thumb;
+    cover.alt = frame.caption;
+  };
+
+  for (const [sel, dir] of [['[data-tile-prev]', -1], ['[data-tile-next]', 1]] as const) {
+    tile.querySelector(sel)?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      page(dir);
+    });
+  }
+
+  // Opening the lightbox should start on whatever slide is showing.
+  tile.querySelector('[data-open]')?.addEventListener(
+    'click',
+    () => { tile.dataset.offset = String(at); },
+    true,
+  );
+}
+
+/* ------------------------------ scroll reveal ------------------------------ */
+
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+  document.documentElement.classList.add('js-reveal');
+
+  /** Stagger a batch the way the masonry reads: down a column, then across. */
+  const revealBatch = (els: HTMLElement[]) => {
+    els
+      .sort((a, b) => {
+        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+        return ra.left - rb.left || ra.top - rb.top;
+      })
+      .forEach((el, i) => {
+        el.style.transitionDelay = `${Math.min(i * 55, 420)}ms`;
+        el.classList.add('is-visible');
+        observer.unobserve(el);
+      });
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => revealBatch(entries.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement)),
+    { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+  );
+
+  // IntersectionObserver reports position at one instant. Images finishing and
+  // filters reflowing both move tiles afterwards, and a tile that ends up on
+  // screen without ever crossing the boundary would stay invisible forever.
+  revealInView = () => {
+    const pending = tiles.filter(
+      (t) => !t.hidden && !t.classList.contains('is-visible') && t.getBoundingClientRect().top < innerHeight,
+    );
+    if (pending.length) revealBatch(pending);
+  };
+
+  // Wait for the intro to clear — otherwise the tiles above the fold finish
+  // fading in while the red overlay is still covering them.
+  const startReveal = () => {
+    for (const tile of tiles) observer.observe(tile);
+    revealInView();
+  };
+  if (document.getElementById('loader')) {
+    document.addEventListener('loader:done', startReveal, { once: true });
+  } else {
+    startReveal();
+  }
+
+  addEventListener('load', revealInView);
+  addEventListener('resize', revealInView);
+  // A tab loaded in the background gets no rAF and no paint; catch up on return.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') revealInView();
+  });
+}
 
 /* --------------------------- hover video previews -------------------------- */
 

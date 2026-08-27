@@ -1,0 +1,132 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { site } from '../data/site';
+
+/**
+ * Intro: white client marks flashing over Eager Eyes red, landing on the name.
+ *
+ * Driven entirely by CSS keyframes rather than JS, so it still plays and still
+ * clears itself if the script fails. JS only removes the node afterwards.
+ */
+const logos = import.meta.glob<{ default: ImageMetadata }>('../assets/loader/*.png', {
+  eager: true,
+});
+
+// Fixed order — the sequence should read as a deliberate reel, not glob order.
+const ORDER = ['bilflo', 'johnnys', 'amtec', 'bmc', 'in-your-prime', 'micdrop'];
+const marks = ORDER.flatMap((name) => {
+  const mod = logos[`../assets/loader/${name}.png`];
+  return mod ? [{ name, src: mod.default }] : [];
+});
+
+// HOLD is only slightly longer than STEP, so marks cross-fade for ~60ms rather
+// than sitting on screen together long enough to read as a double exposure.
+const STEP = 0.3; // seconds between marks
+const HOLD = 0.36; // how long each mark is on screen
+const nameAt = (marks.length - 1) * STEP + HOLD - 0.06;
+const outAt = nameAt + 0.62;
+---
+
+<div id="loader" aria-hidden="true" style={`--out-at:${outAt}s`}>
+  <div class="loader-stage">
+    {
+      marks.map((mark, i) => (
+        <Image
+          src={mark.src}
+          alt=""
+          widths={[520]}
+          loading="eager"
+          class="loader-mark"
+          style={`animation-delay:${(i * STEP).toFixed(2)}s`}
+        />
+      ))
+    }
+    <span class="loader-name" style={`animation-delay:${nameAt.toFixed(2)}s`}>
+      {site.name}
+    </span>
+  </div>
+</div>
+
+<style define:vars={{ hold: `${HOLD}s` }}>
+  #loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background: #ff3e3e;
+    animation: loader-out 0.5s ease var(--out-at) forwards;
+  }
+
+  .loader-stage {
+    display: grid;
+    place-items: center;
+    width: min(72vw, 420px);
+    height: min(72vw, 420px);
+  }
+
+  /* Every mark and the name share one grid cell so they cross-fade in place. */
+  .loader-stage > * {
+    grid-area: 1 / 1;
+    opacity: 0;
+  }
+
+  .loader-mark {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
+    animation: mark-flash var(--hold) ease forwards;
+  }
+
+  .loader-name {
+    font-family: var(--font-heading);
+    font-size: clamp(34px, 8vw, 64px);
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    color: #fff;
+    white-space: nowrap;
+    animation: name-in 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+
+  @keyframes mark-flash {
+    0% { opacity: 0; transform: scale(0.975); }
+    12% { opacity: 1; transform: none; }
+    84% { opacity: 1; transform: none; }
+    100% { opacity: 0; transform: scale(1.015); }
+  }
+
+  @keyframes name-in {
+    0% { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: none; }
+  }
+
+  @keyframes loader-out {
+    to { opacity: 0; visibility: hidden; }
+  }
+
+  /* No flashing sequence for anyone who asked not to see motion. */
+  @media (prefers-reduced-motion: reduce) {
+    #loader { display: none; }
+  }
+</style>
+
+<script>
+  const loader = document.getElementById('loader');
+  if (loader) {
+    // Astro scopes this component's <style>, which rewrites @keyframes names —
+    // so match on the element, not the animation name. Child marks animate too,
+    // but those events target the mark, not the loader.
+    const done = () => {
+      if (!loader.isConnected) return;
+      loader.remove();
+      document.dispatchEvent(new CustomEvent('loader:done'));
+    };
+    loader.addEventListener('animationend', (e) => {
+      if (e.target === loader) done();
+    });
+    // Belt and braces: if the animation never fires, don't strand the page.
+    setTimeout(done, 6000);
+  }
+</script>

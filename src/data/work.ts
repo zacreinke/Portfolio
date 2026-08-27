@@ -45,8 +45,11 @@ export type WorkItem = Base &
     | { kind: 'image'; src: ImageMetadata }
     | { kind: 'carousel'; slides: Slide[] }
     | { kind: 'video'; src: string; poster: ImageMetadata }
-    | { kind: 'embed'; html: string; poster: ImageMetadata }
+    /** Hosted player (YouTube, SoundCloud). `ratio` is width/height, default 16/9. */
+    | { kind: 'embed'; embed: string; ratio?: number; poster: ImageMetadata }
   );
+
+const yt = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
 
 export const work: WorkItem[] = [
   /* ----------------------------- Graphic Design ---------------------------- */
@@ -442,27 +445,54 @@ export const work: WorkItem[] = [
 
   /* ----------------------------- Videography ------------------------------- */
   {
-    id: 'james-jawharp',
-    title: 'James — Jaw Harp',
-    caption: 'Short-form video, shot and edited',
+    id: 'amtec-60-film',
+    title: '60 Years — A Film About Amtec',
+    caption: 'Anniversary documentary — directed, shot and edited',
     category: 'videography',
-    kind: 'video',
-    src: 'work/video/james-jawharp.mp4',
-    poster: img('james-jawharp-poster.jpg'),
+    kind: 'embed',
+    embed: yt('zI2T0lRyQzE'),
+    poster: img('amtec-60-years-film.jpg'),
+  },
+  {
+    id: 'amtec-core-values',
+    title: 'Our Core Values',
+    caption: 'Internal brand film for Amtec Staffing',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('BkUB8iTD6Rk'),
+    poster: img('amtec-core-values.jpg'),
+  },
+  {
+    id: 'bilflo-overview',
+    title: 'What is Bilflo?',
+    caption: 'Product overview video — design, animation and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('c_o2Lxl6S9U'),
+    poster: img('bilflo-overview.jpg'),
+  },
+  {
+    id: 'bilflo-bulk-time',
+    title: 'Import Bulk Time into Bilflo',
+    caption: 'Feature walk-through — design and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('HR1UFMktr6I'),
+    poster: img('bilflo-bulk-time.jpg'),
   },
 
-  /* --------------------------------- Music ---------------------------------
-     Nothing here yet. To add a track, drop a cover into
-     src/assets/work/music/ and add an entry like:
-
-       {
-         id: 'some-track',
-         title: 'Some Track',
-         caption: 'Written, performed and produced',
-         category: 'music',
-         kind: 'embed',
-         html: '<iframe src="https://open.spotify.com/embed/track/…" …></iframe>',
-         poster: img('some-track-cover.jpg'),
-       }
-  --------------------------------------------------------------------------- */
+  /* --------------------------------- Music --------------------------------- */
+  {
+    id: 'soundcloud',
+    title: 'Zac Reinke',
+    caption: 'Original music — written, performed and produced',
+    category: 'music',
+    kind: 'embed',
+    embed:
+      'https://w.soundcloud.com/player/?visual=true' +
+      '&url=https%3A%2F%2Fapi.soundcloud.com%2Fusers%2F6909372' +
+      '&show_artwork=true&color=%23212121',
+    ratio: 16 / 10,
+    poster: img('soundcloud-avatar.jpg'),
+  },
 ];

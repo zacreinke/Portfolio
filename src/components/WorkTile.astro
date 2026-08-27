@@ -2,8 +2,6 @@
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import type { WorkItem } from '../data/work';
-import { categoryLabel } from '../data/site';
-import { withBase } from '../lib/url';
 
 interface Props {
   item: WorkItem;
@@ -18,23 +16,28 @@ const cover: ImageMetadata =
   item.kind === 'carousel' ? item.slides[0]!.src : item.kind === 'image' ? item.src : item.poster;
 
 const slideCount = item.kind === 'carousel' ? item.slides.length : 1;
+const isPlayable = item.kind === 'video' || item.kind === 'embed';
 
 // sharp would flatten an animated GIF to its first frame, so pass those
 // (and SVGs) straight through instead of running them through <Image>.
 const passthrough = cover.format === 'gif' || cover.format === 'svg';
+
+const mediaClass =
+  'block w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]';
 ---
 
 <figure
-  class="group"
+  class="group reveal relative"
   data-tile
   data-index={index}
   data-category={item.category}
+  data-slides={slideCount}
 >
   <button
     type="button"
-    data-open={index}
+    data-open
     aria-label={`Open ${item.title}`}
-    class="relative block w-full cursor-pointer overflow-hidden rounded-card border border-line bg-card"
+    class="relative block w-full cursor-pointer overflow-hidden rounded-tile border border-line bg-card"
   >
     {
       passthrough ? (
@@ -45,7 +48,8 @@ const passthrough = cover.format === 'gif' || cover.format === 'svg';
           height={cover.height}
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
-          class="block w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          data-cover
+          class={mediaClass}
         />
       ) : (
         <Image
@@ -55,39 +59,18 @@ const passthrough = cover.format === 'gif' || cover.format === 'svg';
           sizes="(min-width: 1280px) 300px, (min-width: 1024px) 32vw, (min-width: 640px) 48vw, 92vw"
           loading={eager ? 'eager' : 'lazy'}
           decoding="async"
-          class="block w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          data-cover
+          class={mediaClass}
         />
       )
     }
 
     {
-      item.kind === 'video' && (
-        <video
-          src={withBase(item.src)}
-          muted
-          loop
-          playsinline
-          preload="none"
-          data-hover-video
-          class="pointer-events-none absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        />
-      )
-    }
-
-    {/* Media-kind affordance: slide count for carousels, a play glyph for video. */}
-    {
-      slideCount > 1 && (
-        <span class="label-caps absolute top-2.5 right-2.5 rounded-full bg-card/90 px-2.5 py-1 text-[10px] backdrop-blur-sm">
-          {slideCount}
-        </span>
-      )
-    }
-    {
-      (item.kind === 'video' || item.kind === 'embed') && (
+      isPlayable && (
         <span class="pointer-events-none absolute inset-0 flex items-center justify-center">
           <span class="flex size-12 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm">
             <svg viewBox="0 0 24 24" class="ml-0.5 size-5" fill="currentColor" aria-hidden="true">
-              <path d="M8 5v14l11-7z"></path>
+              <path d="M8 5v14l11-7z" />
             </svg>
           </span>
         </span>
@@ -95,8 +78,41 @@ const passthrough = cover.format === 'gif' || cover.format === 'svg';
     }
   </button>
 
-  <figcaption class="mt-2.5 flex items-baseline justify-between gap-3 px-0.5">
-    <span class="font-heading text-[15px] font-medium tracking-[-0.015em]">{item.title}</span>
-    <span class="label-caps shrink-0 text-[10px] opacity-60">{categoryLabel(item.category)}</span>
-  </figcaption>
+  {/* Count badge — a fixed circle, so 1 and 12 render at the same size. */}
+  {
+    slideCount > 1 && (
+      <span class="pointer-events-none absolute top-2.5 right-2.5 flex size-7 items-center justify-center rounded-full bg-card/90 text-[11px] font-semibold tabular-nums backdrop-blur-sm">
+        {slideCount}
+      </span>
+    )
+  }
+
+  {/* Carousel arrows — siblings of the open button, not nested inside it, so the
+      markup stays valid. They page through the slides in place on hover. */}
+  {
+    slideCount > 1 && (
+      <>
+        <button
+          type="button"
+          data-tile-prev
+          aria-label="Previous image"
+          class="absolute top-1/2 left-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-card/90 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          data-tile-next
+          aria-label="Next image"
+          class="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-card/90 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100 focus-visible:opacity-100"
+        >
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </>
+    )
+  }
 </figure>

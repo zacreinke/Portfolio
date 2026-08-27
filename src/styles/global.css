@@ -24,6 +24,7 @@
   --color-pill: #e1e1e1;
 
   --radius-card: 12px;
+  --radius-tile: 24px;
 
   --container-site: 1280px;
 }
@@ -105,6 +106,20 @@
     -webkit-column-break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 20px;
+  }
+
+  /* Scroll reveal. The class is only armed once JS adds .js-reveal to <html>,
+     so with no JS every tile is simply visible. */
+  .js-reveal .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  .js-reveal .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1),
+      transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
   /* Hide the tab bar scrollbar on narrow screens without killing scrolling. */
