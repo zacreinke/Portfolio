@@ -10,7 +10,7 @@ const tabs = [{ id: 'all', label: 'All Work' }, ...categories];
       id="tabs"
       role="tablist"
       aria-label="Filter work by type"
-      class="no-scrollbar -mb-px flex gap-7 overflow-x-auto border-b border-line"
+      class="no-scrollbar flex gap-7 overflow-x-auto overflow-y-hidden border-b border-line"
     >
       {
         tabs.map((tab, i) => (
@@ -22,7 +22,7 @@ const tabs = [{ id: 'all', label: 'All Work' }, ...categories];
             aria-selected={i === 0 ? 'true' : 'false'}
             aria-controls="work"
             tabindex={i === 0 ? 0 : -1}
-            class="label-caps -mb-px shrink-0 cursor-pointer border-b border-transparent px-0.5 pt-1 pb-3 whitespace-nowrap opacity-55 transition-opacity duration-200 hover:opacity-100 aria-selected:border-ink aria-selected:opacity-100"
+            class="label-caps shrink-0 cursor-pointer border-b border-transparent px-0.5 pt-1 pb-3 whitespace-nowrap opacity-55 transition-opacity duration-200 hover:opacity-100 aria-selected:border-ink aria-selected:opacity-100"
           >
             {tab.label}
           </button>

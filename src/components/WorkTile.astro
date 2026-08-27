@@ -34,6 +34,7 @@ const mediaClass =
   data-tile
   data-index={index}
   data-category={item.category}
+  data-ratio={(cover.width / cover.height).toFixed(4)}
 >
   {
     fan.map((src, i) => (

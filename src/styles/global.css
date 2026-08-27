@@ -78,26 +78,23 @@
     text-transform: uppercase;
   }
 
-  /* Multi-column masonry. Real masonry with no JS and no layout library;
-     filtering a tile to display:none reflows the columns for free. */
+  /* Masonry.
+     CSS multi-column is the no-JS fallback. It balances by height, which means
+     it can leave a trailing column empty — nine similar tiles across four
+     columns render as 3/3/3/0 — so once JS is available we switch to explicit
+     flex columns and place each tile in the shortest one. */
   .masonry {
     column-count: 1;
     column-gap: 16px;
   }
   @media (min-width: 640px) {
-    .masonry {
-      column-count: 2;
-    }
+    .masonry { column-count: 2; }
   }
   @media (min-width: 1024px) {
-    .masonry {
-      column-count: 3;
-    }
+    .masonry { column-count: 3; }
   }
   @media (min-width: 1280px) {
-    .masonry {
-      column-count: 4;
-    }
+    .masonry { column-count: 4; }
   }
 
   .masonry > * {
@@ -106,6 +103,24 @@
     -webkit-column-break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 16px;
+  }
+
+  /* JS-driven mode: real columns, exact count, left-to-right order. */
+  .masonry--js {
+    column-count: initial;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .masonry--js > * {
+    margin-bottom: 0;
+  }
+  .masonry-col {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 16px;
   }
 
   /* Carousel fan — two more slides ease out from behind the cover on hover,

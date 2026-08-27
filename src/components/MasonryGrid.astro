@@ -49,7 +49,21 @@ async function sized(src: ImageMetadata, width: number) {
 const frames: Frame[] = [];
 const tiles: { item: (typeof work)[number]; index: number }[] = [];
 
-for (const item of work) {
+/**
+ * work.ts is grouped by category so it stays readable, but rendering in that
+ * order makes "All Work" read as six blocks. Round-robin across the categories
+ * instead, so every screenful mixes disciplines. Filtering preserves relative
+ * order, so the single-category views are unaffected.
+ */
+const byCategory = categories.map((c) => work.filter((w) => w.category === c.id));
+const interleaved: typeof work = [];
+for (let i = 0; interleaved.length < work.length; i++) {
+  for (const bucket of byCategory) {
+    if (bucket[i]) interleaved.push(bucket[i]!);
+  }
+}
+
+for (const item of interleaved) {
   tiles.push({ item, index: frames.length });
 
   const shared = {

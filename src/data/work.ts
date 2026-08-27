@@ -51,6 +51,10 @@ export type WorkItem = Base &
 
 const yt = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
 
+const sc = (kind: 'tracks' | 'playlists', id: number) =>
+  'https://w.soundcloud.com/player/?visual=true&show_artwork=true&color=%23212121' +
+  `&url=https%3A%2F%2Fapi.soundcloud.com%2F${kind}%2F${id}`;
+
 export const work: WorkItem[] = [
   /* ----------------------------- Graphic Design ---------------------------- */
   {
@@ -463,6 +467,24 @@ export const work: WorkItem[] = [
     poster: img('amtec-core-values.jpg'),
   },
   {
+    id: 'amtec-careers',
+    title: 'Amtec Careers — Join Our Team',
+    caption: 'Recruitment film — directed, shot and edited',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('L_z7NfojNkI'),
+    poster: img('amtec-careers.jpg'),
+  },
+  {
+    id: 'amtec-interview-generator',
+    title: 'Behavioral Interview Questions Generator',
+    caption: 'Product explainer — design, animation and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('q8QPTAAsfvk'),
+    poster: img('amtec-interview-generator.jpg'),
+  },
+  {
     id: 'bilflo-overview',
     title: 'What is Bilflo?',
     caption: 'Product overview video — design, animation and edit',
@@ -480,19 +502,97 @@ export const work: WorkItem[] = [
     embed: yt('HR1UFMktr6I'),
     poster: img('bilflo-bulk-time.jpg'),
   },
-
-  /* --------------------------------- Music --------------------------------- */
   {
-    id: 'soundcloud',
-    title: 'Zac Reinke',
-    caption: 'Original music — written, performed and produced',
+    id: 'bilflo-prismhr',
+    title: 'PrismHR Integration',
+    caption: 'Integration explainer — design, animation and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('DqIz9wwvEPc'),
+    poster: img('bilflo-prismhr.jpg'),
+  },
+  {
+    id: 'bilflo-top-echelon',
+    title: 'Top Echelon Integration',
+    caption: 'Integration explainer — design, animation and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('OVcthmeGzvg'),
+    poster: img('bilflo-top-echelon.jpg'),
+  },
+  {
+    id: 'bilflo-smartsearch',
+    title: 'SmartSearch Integration',
+    caption: 'Integration explainer — design, animation and edit',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('JmMKb1mB7S0'),
+    poster: img('bilflo-smartsearch.jpg'),
+  },
+  {
+    id: 'amtec-short-foosball',
+    title: 'Hiring Advice for Foosball Players',
+    caption: 'Short-form social video',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('5bBtQuMv1O8'),
+    ratio: 9 / 16,
+    poster: img('amtec-short-foosball.jpg'),
+  },
+  {
+    id: 'amtec-short-impact',
+    title: 'Big Impact With Small Change',
+    caption: 'Short-form social video',
+    category: 'videography',
+    kind: 'embed',
+    embed: yt('ebKX2KZQxS8'),
+    ratio: 9 / 16,
+    poster: img('amtec-short-impact.jpg'),
+  },
+
+  /* --------------------------------- Music ---------------------------------
+     "Broken" is on the SoundCloud profile but is not public — its page returns
+     no metadata to anonymous visitors, so an embed would fail. Make it public
+     and it can be added here alongside the other singles.
+  --------------------------------------------------------------------------- */
+  {
+    id: 'shine-ep',
+    title: 'SHINE — EP',
+    caption: 'Four-track EP, 2015 — written, performed and produced',
     category: 'music',
     kind: 'embed',
-    embed:
-      'https://w.soundcloud.com/player/?visual=true' +
-      '&url=https%3A%2F%2Fapi.soundcloud.com%2Fusers%2F6909372' +
-      '&show_artwork=true&color=%23212121',
+    embed: sc('playlists', 97200519),
     ratio: 16 / 10,
-    poster: img('soundcloud-avatar.jpg'),
+    poster: img('shine-ep.jpg'),
+  },
+  {
+    id: 'me-without-you',
+    title: 'Me Without You',
+    caption: 'Single — written, performed and produced',
+    category: 'music',
+    kind: 'embed',
+    embed: sc('tracks', 279867949),
+    ratio: 16 / 10,
+    poster: img('me-without-you.jpg'),
+  },
+  {
+    id: 'make-me-rest',
+    title: 'Make Me Rest',
+    caption: 'Single — written, performed and produced',
+    category: 'music',
+    kind: 'embed',
+    embed: sc('tracks', 221348745),
+    ratio: 16 / 10,
+    poster: img('make-me-rest.jpg'),
+  },
+  {
+    id: 'summer-again',
+    title: 'Summer Again',
+    caption: 'Single — written, performed and produced',
+    category: 'music',
+    kind: 'embed',
+    embed: sc('tracks', 175764332),
+    ratio: 16 / 10,
+    poster: img('summer-again.jpg'),
   },
 ];

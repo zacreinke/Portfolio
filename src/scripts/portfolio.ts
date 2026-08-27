@@ -47,6 +47,9 @@ const btnClose = $<HTMLButtonElement>('lb-close');
 /** Assigned once the reveal observer is armed; a no-op before that. */
 let revealInView: () => void = () => {};
 
+/** Re-packs the masonry columns for the current filter and viewport. */
+let layout: () => void = () => {};
+
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
 let sequence: number[] = frames.map((_, i) => i);
@@ -74,9 +77,11 @@ function applyFilter(next: string) {
 
   history.replaceState(null, '', next === 'all' ? location.pathname : `#${next}`);
 
-  // Filtering reflows the columns, so tiles that were below the fold a moment
-  // ago may now be on screen. Called synchronously rather than via rAF, which
-  // never fires while the tab is in the background.
+  // Re-pack first: the visible set changed, so column assignment changes too.
+  // Then re-check the viewport — tiles that were below the fold a moment ago
+  // may now be on screen. Called synchronously rather than via rAF, which never
+  // fires while the tab is in the background.
+  layout();
   revealInView();
 }
 
@@ -137,8 +142,13 @@ function render() {
     const box = document.createElement('div');
     // Solid ground: a player that is slow or blocked would otherwise let the
     // blurred page show straight through the frame.
-    box.className = 'w-full max-w-5xl overflow-hidden rounded-tile bg-ink';
+    box.className = 'overflow-hidden rounded-tile bg-ink';
+    // height:100% + width:auto + aspect-ratio sizes correctly for both
+    // orientations — a 9:16 Short would overflow if width drove the box.
     box.style.aspectRatio = String(frame.ratio ?? 16 / 9);
+    box.style.height = '100%';
+    box.style.width = 'auto';
+    box.style.maxWidth = 'min(100%, 1024px)';
     const iframe = document.createElement('iframe');
     iframe.src = frame.src;
     iframe.title = frame.title;
@@ -234,6 +244,57 @@ dialog.addEventListener('close', () => {
   document.body.style.overflow = '';
 });
 
+/* --------------------------------- masonry --------------------------------- */
+
+// CSS multi-column balances by height, so a trailing column can come up empty
+// (nine similar tiles across four columns render 3/3/3/0). Place tiles by hand
+// instead: fixed column count, and each tile goes to the shortest column.
+// Heights come from each cover's aspect ratio, so this never waits on images.
+{
+  const grid = document.querySelector<HTMLElement>('.masonry');
+  if (grid) {
+    const columnsFor = (w: number) => (w >= 1280 ? 4 : w >= 1024 ? 3 : w >= 640 ? 2 : 1);
+    let columnCount = 0;
+
+    layout = () => {
+      const wanted = columnsFor(innerWidth);
+      const visible = tiles.filter((t) => !t.hidden);
+
+      if (wanted !== columnCount) {
+        columnCount = wanted;
+        grid.replaceChildren();
+        for (let i = 0; i < wanted; i++) {
+          const col = document.createElement('div');
+          col.className = 'masonry-col';
+          grid.append(col);
+        }
+      }
+
+      const cols = [...grid.children] as HTMLElement[];
+      for (const col of cols) col.replaceChildren();
+
+      // Relative heights only — the unit cancels out, since every column is
+      // the same width. A tile is 1/ratio tall plus a constant for the gap.
+      const heights = new Array(cols.length).fill(0);
+      for (const tile of visible) {
+        let shortest = 0;
+        for (let i = 1; i < heights.length; i++) {
+          if (heights[i] < heights[shortest]) shortest = i;
+        }
+        cols[shortest]!.append(tile);
+        heights[shortest] += 1 / (Number(tile.dataset.ratio) || 1) + 0.06;
+      }
+    };
+
+    grid.classList.add('masonry--js');
+    layout();
+    addEventListener('resize', () => {
+      layout();
+      revealInView();
+    });
+  }
+}
+
 /* ------------------------------ scroll reveal ------------------------------ */
 
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
@@ -271,6 +332,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObse
   // Wait for the intro to clear — otherwise the tiles above the fold finish
   // fading in while the red overlay is still covering them.
   const startReveal = () => {
+    layout();
     for (const tile of tiles) observer.observe(tile);
     revealInView();
   };
