@@ -1,0 +1,36 @@
+---
+import { Image } from 'astro:assets';
+import zac from '../assets/zac.jpg';
+import { site } from '../data/site';
+---
+
+<header class="sticky top-0 z-30 border-b border-line bg-page/85 backdrop-blur-md">
+  <nav
+    class="mx-auto flex max-w-site items-center justify-between gap-4 px-5 py-3.5 sm:px-8"
+    aria-label="Primary"
+  >
+    <a href="#work" class="group flex items-center gap-3">
+      <Image
+        src={zac}
+        alt={site.name}
+        width={80}
+        height={80}
+        densities={[1, 2]}
+        loading="eager"
+        class="size-10 rounded-full object-cover"
+      />
+      <span
+        class="font-heading text-[17px] font-medium tracking-[-0.02em] whitespace-nowrap"
+      >
+        {site.name}
+      </span>
+    </a>
+
+    <a
+      href={`mailto:${site.email}?subject=Let%27s%20work%20together`}
+      class="label-caps rounded-full bg-pill px-5 py-2.5 whitespace-nowrap transition-colors duration-200 hover:bg-ink hover:text-card"
+    >
+      Hit Me Up!
+    </a>
+  </nav>
+</header>

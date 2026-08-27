@@ -1,0 +1,68 @@
+---
+/**
+ * Native <dialog> + showModal(), which gives focus trapping and Esc-to-close
+ * for free. The blurred backdrop lives on dialog::backdrop in global.css.
+ */
+---
+
+<dialog
+  id="lightbox"
+  aria-label="Work viewer"
+  class="fixed inset-0 size-full bg-transparent p-0 text-ink"
+>
+  <div class="flex size-full flex-col">
+    <!-- Top bar: category + counter + close -->
+    <div class="flex shrink-0 items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
+      <span id="lb-category" class="label-caps text-card/70"></span>
+      <div class="flex items-center gap-4">
+        <span id="lb-counter" class="label-caps tabular-nums text-card/70"></span>
+        <button
+          type="button"
+          id="lb-close"
+          aria-label="Close"
+          class="flex size-9 cursor-pointer items-center justify-center rounded-full text-card/80 transition-colors hover:bg-card/15 hover:text-card"
+        >
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stage -->
+    <div class="relative flex min-h-0 flex-1 items-center justify-center px-4 sm:px-16">
+      <button
+        type="button"
+        id="lb-prev"
+        aria-label="Previous"
+        class="absolute left-2 z-10 flex size-11 cursor-pointer items-center justify-center rounded-full text-card/80 transition-colors hover:bg-card/15 hover:text-card sm:left-4"
+      >
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+
+      {/* size-full, not shrink-to-fit: media sizes against a definite box, so
+          max-w/max-h can't resolve circularly against their own container. */}
+      <div id="lb-stage" class="flex size-full items-center justify-center"></div>
+
+      <button
+        type="button"
+        id="lb-next"
+        aria-label="Next"
+        class="absolute right-2 z-10 flex size-11 cursor-pointer items-center justify-center rounded-full text-card/80 transition-colors hover:bg-card/15 hover:text-card sm:right-4"
+      >
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Caption -->
+    <div class="shrink-0 px-4 pt-4 pb-6 text-center sm:px-6">
+      <p id="lb-title" class="font-heading text-[17px] font-medium tracking-[-0.015em] text-card"></p>
+      <p id="lb-caption" class="mt-1 text-[13px] text-card/75"></p>
+      <div id="lb-dots" class="mt-3 flex items-center justify-center gap-1.5"></div>
+    </div>
+  </div>
+</dialog>

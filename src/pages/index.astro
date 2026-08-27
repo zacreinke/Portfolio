@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import FilterTabs from '../components/FilterTabs.astro';
+import MasonryGrid from '../components/MasonryGrid.astro';
+import Lightbox from '../components/Lightbox.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Base>
+  <Nav />
+  <main>
+    <Hero />
+    <FilterTabs />
+    <MasonryGrid />
+  </main>
+  <Footer />
+  <Lightbox />
+
+  <script>
+    import '../scripts/portfolio';
+  </script>
+</Base>

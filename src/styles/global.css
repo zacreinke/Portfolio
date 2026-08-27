@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens lifted verbatim from Resumes/resume-design.html so the site
+   and the resume read as one identity.
+
+   Rules carried over:
+     - Five colors. No accents. Emphasis comes from size, tracking and opacity.
+     - Display type gets tight negative tracking; small caps labels get wide
+       positive tracking.
+     - Three weights only: 400, 500, 600.
+     - 12px radius on cards, 999px on pills. Nothing else is rounded.
+       No shadows.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --font-heading: "Clash Grotesk", "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+
+  --color-ink: #212121;
+  --color-line: #dadee0;
+  --color-page: #f6f7f8;
+  --color-card: #ffffff;
+  --color-pill: #e1e1e1;
+
+  --radius-card: 12px;
+
+  --container-site: 1280px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Keep the focus ring monochrome and on-system. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Section eyebrow / small caps label — resume h2 treatment. */
+  .label-caps {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Multi-column masonry. Real masonry with no JS and no layout library;
+     filtering a tile to display:none reflows the columns for free. */
+  .masonry {
+    column-count: 1;
+    column-gap: 20px;
+  }
+  @media (min-width: 640px) {
+    .masonry {
+      column-count: 2;
+    }
+  }
+  @media (min-width: 1024px) {
+    .masonry {
+      column-count: 3;
+    }
+  }
+  @media (min-width: 1280px) {
+    .masonry {
+      column-count: 4;
+    }
+  }
+
+  .masonry > * {
+    break-inside: avoid;
+    /* Safari still needs the legacy pair to honour break-inside in multicol. */
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+
+  /* Hide the tab bar scrollbar on narrow screens without killing scrolling. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The darkened + blurred backdrop behind the lightbox. */
+/* Only the standard property — Lightning CSS adds the -webkit- alias itself,
+   and writing both by hand makes it drop the unprefixed one. */
+dialog::backdrop {
+  background: rgb(18 18 18 / 0.72);
+  backdrop-filter: blur(24px);
+}
+
+dialog {
+  max-width: none;
+  max-height: none;
+}
