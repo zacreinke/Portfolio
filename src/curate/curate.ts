@@ -340,8 +340,9 @@ let marker: HTMLElement | null = null;
 function clearMarks() {
   marker?.remove();
   marker = null;
-  for (const el of board.querySelectorAll('[data-id]')) {
-    (el as HTMLElement).classList.remove('ring-emerald-500', 'ring-4');
+  for (const el of board.querySelectorAll<HTMLElement>('[data-id]')) {
+    el.style.outline = '';
+    el.style.outlineOffset = '';
   }
 }
 
@@ -399,12 +400,21 @@ board.addEventListener('dragover', (e) => {
     const r = over.getBoundingClientRect();
     const edge = (e.clientY - r.top) / r.height;
     if (edge > 0.25 && edge < 0.75 && canCombine(dragIds, over.dataset.id!)) {
-      over.classList.add('ring-4', 'ring-emerald-500');
+      // Same reasoning as the drop line — set it directly rather than trusting
+      // a utility class to have been generated.
+      over.style.outline = '3px solid var(--color-ink)';
+      over.style.outlineOffset = '2px';
       return;
     }
   }
+  // Styled inline, not by class: Astro scopes <style> to elements in the
+  // template, and this node is created here, so a stylesheet rule would never
+  // reach it — it would insert with no height and no colour, i.e. invisibly.
   marker = document.createElement('div');
-  marker.className = 'drop-line';
+  marker.dataset.dropline = '';
+  marker.style.cssText =
+    'height:4px;flex:0 0 4px;border-radius:999px;background:var(--color-ink);' +
+    'margin:-2px 2px;box-shadow:0 0 0 2px var(--color-page);pointer-events:none;';
   body.insertBefore(marker, insertBefore(body, e.clientY));
 });
 
