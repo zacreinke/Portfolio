@@ -73,7 +73,12 @@ const tiles: { item: (typeof work)[number]; index: number }[] = [];
  * them, so ordering is applied at run time by sorting on these — see layout()
  * in scripts/portfolio.ts. An id with no rank sorts last and keeps its place.
  */
-const rankAll = new Map(highlightOrder().map((id, i) => [id, i]));
+const picked = highlightOrder();
+// An empty Highlights list means nothing has been curated yet, not that the
+// landing page should be blank — fall back to showing everything.
+const rankAll = new Map(
+  (picked.length ? picked : work.map((w) => w.id)).map((id, i) => [id, i]),
+);
 const rankCat = new Map<string, number>();
 for (const ids of Object.values(featuredOrder())) {
   ids?.forEach((id, i) => rankCat.set(id, i));

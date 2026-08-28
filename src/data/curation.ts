@@ -14,38 +14,7 @@ import type { Category } from './site';
  * The Highlights tab: membership and order in one list. First id renders
  * first. Anything not listed lives only under its category tab.
  */
-export const highlights: string[] = [
-  'bilflo-identity',
-  'johnnys-mobile-detail',
-  'in-your-prime',
-  'amtec-60-event',
-  'mic-drop',
-  'fender-jaguar',
-  'the-shop',
-  'guitar-print-les-paul',
-  'be-my-quarantine',
-  'bilflo-site-walkthrough',
-  'bilflo-app',
-  'baby-artemis',
-  'vw-thing',
-  'catalina-planter',
-  'amtec-60-film',
-  'amtec-core-values',
-  'bilflo-prismhr',
-  'shine-ep',
-  'amtec-christmas-2022',
-  'desert-christmas',
-  'lit-tree',
-  'amtec-bitz',
-  'tristaff-identity',
-  'economic-reports',
-  'tools-of-the-trade',
-  'purple-squirrel',
-  'amtec-web',
-  'clearly-filtered',
-  'evergreen-identity',
-  'bilflo-display-ads',
-];
+export const highlights: string[] = [];
 
 /**
  * Pinned to the top of their own category tab, in this order. Everything else
@@ -71,7 +40,56 @@ export const moves: Record<string, Category> = {};
  * can be rearranged like anything else. Each part gets a stable id of
  * `<id>--<n>`, which merges and moves can then refer to.
  */
-export const splits: string[] = [];
+export const splits: string[] = [
+  'bilflo-identity',
+  'johnnys-mobile-detail',
+  'in-your-prime',
+  'amtec-60-identity',
+  'amtec-60-event',
+  'amtec-60-merch',
+  'blackmagic-collective',
+  'mic-drop',
+  'bad-badge',
+  'zr-monogram',
+  'the-shop',
+  'guitar-print-jaguar',
+  'guitar-print-les-paul',
+  'guitar-print-les-paul-junior',
+  'guitar-print-mustang',
+  'be-my-quarantine',
+  'bilflo-app',
+  'amtec-christmas-cards',
+  'amtec-christmas-2022',
+  'amtec-christmas-2025',
+  'desert-christmas',
+  'amtec-holiday-campaigns',
+  'amtec-bitz',
+  'amtec-conference-booths',
+  'amtec-signage',
+  'amtec-merch',
+  'tristaff-identity',
+  'tristaff-services',
+  'economic-reports',
+  'job-post-ads',
+  'amtec-benefits-campaign',
+  'simplee-coffee',
+  'tunable-tunes',
+  'foothills',
+  'amtec-brand-docs',
+  'amtec-social-guides',
+  'hiring-scott',
+  'amtec-web',
+  'algorri-trucks',
+  'sauce-posters',
+  'clearly-filtered',
+  'evergreen-identity',
+  'evergreen-lockups',
+  'evergreen-social',
+  'ordinary-girl',
+  'ray-johnson-memorial',
+  'eager-eyes-brand',
+  'bilflo-display-ads',
+];
 
 /** Several pieces shown as one carousel. */
 export type Merge = {
