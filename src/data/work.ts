@@ -1,6 +1,6 @@
 import type { ImageMetadata } from 'astro';
 import type { Category } from './site';
-import { featured, highlights } from './curation';
+import { featured, hidden, highlights, merges } from './curation';
 
 /* ---------------------------------------------------------------------------
    Adding work is two steps:
@@ -101,7 +101,7 @@ export type WorkItem = Base &
  * ids, the same way img() does for a missing filename.
  */
 function checkIds(ids: readonly string[], where: string): string[] {
-  const known = new Set(work.map((w) => w.id));
+  const known = new Set(catalog.map((w) => w.id));
   for (const id of ids) {
     if (known.has(id)) continue;
     // 180 ids is too many to dump, so offer the ones that share the most with
@@ -143,7 +143,13 @@ const sc = (kind: 'tracks' | 'playlists', id: number) =>
   'https://w.soundcloud.com/player/?visual=true&show_artwork=true&color=%23212121' +
   `&url=https%3A%2F%2Fapi.soundcloud.com%2F${kind}%2F${id}`;
 
-export const work: WorkItem[] = [
+/**
+ * The authored catalogue. Edits from /curate never touch this file — removals
+ * and merges are declared in curation.ts and applied by compose() below, so
+ * the structure and comments here stay hand-written and every edit is
+ * reversible.
+ */
+const catalog: WorkItem[] = [
   /* ----------------------------- Graphic Design ---------------------------- */
   /* Bilflo was one 20-slide carousel holding identity, social and collateral.
      Split by artefact so a rotation never changes the subject. Two slides were
@@ -2205,3 +2211,87 @@ export const work: WorkItem[] = [
     ],
   },
 ];
+
+/**
+ * Apply the editorial layer from curation.ts: drop anything hidden, then fold
+ * merged pieces into a single carousel. A merge takes the grid position of its
+ * first member, so combining two tiles does not reshuffle the page around them.
+ */
+function compose(): WorkItem[] {
+  const hide = new Set(checkIds(hidden, 'hidden'));
+  const byId = new Map(catalog.map((item) => [item.id, item]));
+  const authored = new Set(byId.keys());
+
+  const combined = new Map<string, WorkItem>();
+  const ownerOf = new Map<string, string>();
+
+  for (const merge of merges) {
+    if (authored.has(merge.id)) {
+      throw new Error(
+        `[curation.ts] merge "${merge.id}" reuses an id from work.ts. Give the ` +
+          `combined piece its own id.`,
+      );
+    }
+    checkIds(merge.members, `merges["${merge.id}"].members`);
+
+    const slides: Slide[] = [];
+    for (const id of merge.members) {
+      if (hide.has(id)) continue;
+      const prior = ownerOf.get(id);
+      if (prior && prior !== merge.id) {
+        throw new Error(
+          `[curation.ts] "${id}" is a member of both "${prior}" and "${merge.id}". ` +
+            `A piece can only be combined once.`,
+        );
+      }
+      ownerOf.set(id, merge.id);
+
+      const part = byId.get(id)!;
+      if (part.kind === 'image') slides.push({ src: part.src, caption: part.title });
+      else if (part.kind === 'carousel') slides.push(...part.slides);
+      else {
+        // A slide is a still, a model or a document. A player is none of those,
+        // so there is nothing sensible to fold in.
+        throw new Error(
+          `[curation.ts] merge "${merge.id}" includes "${id}", which is a ` +
+            `${part.kind}. Only stills and carousels can be combined.`,
+        );
+      }
+    }
+    if (!slides.length) continue;
+
+    const first = byId.get(merge.members.find((id) => !hide.has(id))!)!;
+    combined.set(merge.id, {
+      id: merge.id,
+      title: merge.title,
+      caption: merge.caption ?? first.caption,
+      category: merge.category ?? first.category,
+      ...(merge.members.some((id) => byId.get(id)?.wide) ? { wide: true } : {}),
+      kind: 'carousel',
+      slides,
+    });
+  }
+
+  const out: WorkItem[] = [];
+  const placed = new Set<string>();
+  for (const item of catalog) {
+    if (hide.has(item.id)) continue;
+    const owner = ownerOf.get(item.id);
+    if (owner) {
+      if (!placed.has(owner)) {
+        placed.add(owner);
+        const built = combined.get(owner);
+        if (built) out.push(built);
+      }
+      continue;
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+/** What the site renders: the catalogue with the editorial layer applied. */
+export const work: WorkItem[] = compose();
+
+/** Everything as authored, overrides not applied — /curate needs the full set. */
+export const catalogue: WorkItem[] = catalog;

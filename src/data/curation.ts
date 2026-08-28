@@ -53,3 +53,30 @@ export const highlights: string[] = [
  * no need to list all 180 pieces to promote three of them.
  */
 export const featured: Partial<Record<Category, string[]>> = {};
+
+/**
+ * Ids kept out of the site. The entry stays in work.ts and the files stay on
+ * disk — this only stops it being rendered, so it is reversible from /curate.
+ */
+export const hidden: string[] = [];
+
+/** Several pieces shown as one carousel. */
+export type Merge = {
+  /** Id for the combined piece; must not clash with one in work.ts. */
+  id: string;
+  title: string;
+  caption?: string;
+  category?: Category;
+  /**
+   * Pieces to fold in, in order. Stills contribute one slide, carousels
+   * contribute all of theirs. Videos and embeds cannot be members — a slide is
+   * a still, a model or a document, and a player is none of those.
+   */
+  members: string[];
+};
+
+/**
+ * Combined pieces. Each takes the grid position of its first member, so
+ * merging does not reshuffle everything around it.
+ */
+export const merges: Merge[] = [];
