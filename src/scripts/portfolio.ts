@@ -9,6 +9,7 @@ type Frame = {
   title: string;
   caption: string;
   kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
+  highlight: boolean;
   src: string;
   thumb?: string;
   width: number;
@@ -69,8 +70,11 @@ function applyFilter(next: string, animate = false) {
     tab.tabIndex = on ? 0 : -1;
   }
 
+  // Highlights is a curated selection, not everything — the category tabs are
+  // where the full archive lives.
   for (const tile of tiles) {
-    tile.hidden = next !== 'all' && tile.dataset.category !== next;
+    tile.hidden =
+      next === 'all' ? tile.dataset.highlight !== '1' : tile.dataset.category !== next;
   }
 
   for (const el of empties) {
@@ -78,7 +82,7 @@ function applyFilter(next: string, animate = false) {
   }
 
   sequence = frames.reduce<number[]>((acc, f, i) => {
-    if (next === 'all' || f.category === next) acc.push(i);
+    if (next === 'all' ? f.highlight : f.category === next) acc.push(i);
     return acc;
   }, []);
 

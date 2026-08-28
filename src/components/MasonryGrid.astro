@@ -18,6 +18,8 @@ type Frame = {
   title: string;
   caption: string;
   kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
+  /** Part of the curated Highlights view. */
+  highlight: boolean;
   /** Full-size source for the lightbox. */
   src: string;
   /** Tile-size source, used when a carousel rotates in the grid. */
@@ -81,6 +83,7 @@ for (const item of interleaved) {
     category: item.category,
     categoryLabel: categoryLabel(item.category),
     title: item.title,
+    highlight: item.highlight === true,
   };
 
   if (item.kind === 'carousel') {

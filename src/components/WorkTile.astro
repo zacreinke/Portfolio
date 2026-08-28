@@ -45,8 +45,11 @@ const markerIsCount = marker !== null && /^\d+$/.test(marker);
  * 0.41 display ad becomes a tower and a 4.27 lockup becomes a letter slot.
  * Clamp the frame, and where the clamp bites, letterbox the artwork inside it
  * rather than cropping — a beheaded guitar is worse than empty margin.
+ *
+ * The floor sits just under the portrait illustrations (0.5625) so those fill
+ * their frame edge to edge; only the genuine outliers get letterboxed.
  */
-const MIN_RATIO = 0.78; // ~4:5, the tallest a tile may stand
+const MIN_RATIO = 0.55; // ~5:9, the tallest a tile may stand
 const MAX_RATIO = 2.0; // 2:1, the widest it may lie
 const trueRatio = cover.width / cover.height;
 const ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, trueRatio));
@@ -93,6 +96,8 @@ const mediaClass =
   data-category={item.category}
   data-ratio={ratio.toFixed(4)}
   data-span={item.wide ? 2 : 1}
+  data-highlight={item.highlight ? '1' : undefined}
+  hidden={!item.highlight}
 >
   {
     fan.map((src, i) => (

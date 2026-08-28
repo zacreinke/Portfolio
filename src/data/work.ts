@@ -76,6 +76,8 @@ type Base = {
   category: Category;
   /** Span two columns wherever the grid is at least three wide. */
   wide?: boolean;
+  /** Shown in Highlights, the curated landing view. Categories hold everything. */
+  highlight?: boolean;
 };
 
 /**
@@ -108,6 +110,7 @@ export const work: WorkItem[] = [
      is a white mark on transparency that rendered invisible on a white tile. */
   {
     id: 'bilflo-identity',
+    highlight: true,
     title: 'Bilflo — Identity',
     caption: 'Logo and brand system for a workforce management platform',
     category: 'branding',
@@ -125,30 +128,79 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'bilflo-collateral',
-    title: 'Bilflo — Collateral',
-    caption: 'Print, merch and trade-show material for the Bilflo launch',
+    id: 'business-cards',
+    title: 'Business cards',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-add-07-bf7-compressed-ig.jpg'),
+  },
+  {
+    id: 'team-shirts',
+    title: 'Team shirts',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-add-08-bilflo-shirts.jpg'),
+  },
+  {
+    id: 'trade-show-banner',
+    title: 'Trade-show banner',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-y-01-bilflo-banner-mockup-d1.webp'),
+  },
+  {
+    id: 'summer-of-automated-invoicing',
+    title: 'Summer of Automated Invoicing',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-y-02-automated-invoicing-summer-4.png'),
+  },
+  {
+    id: 'free-gift-ticket-3-month-trial',
+    title: 'Free gift ticket, 3-month trial',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-y-03-bilflo-free-gift.png'),
+  },
+  {
+    id: 'staffing-world-2021-ticket',
+    title: 'Staffing World 2021 ticket',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('bilflo-y-04-bilflo-staffing-world-2021.png'),
+  },
+  {
+    id: 'amtec-x-bilflo-announcement-banner',
+    title: 'Amtec x Bilflo announcement banner',
+    caption: 'Marketing collateral for Bilflo',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('logos-marks-11-amtec-bilflo-linkedin-banner.jpg'),
+  },
+  {
+    id: 'core-flyer-front-and-back',
+    title: 'Core flyer, front and back',
+    caption: 'Marketing collateral for Bilflo',
     category: 'graphic-design',
     kind: 'carousel',
     slides: [
-      { src: img('bilflo-add-07-bf7-compressed-ig.jpg'), caption: 'Business cards' },
-      { src: img('bilflo-add-08-bilflo-shirts.jpg'), caption: 'Team shirts' },
-      { src: img('bilflo-y-01-bilflo-banner-mockup-d1.webp'), caption: 'Trade-show banner' },
-      { src: img('bilflo-y-02-automated-invoicing-summer-4.png'), caption: 'Summer of Automated Invoicing' },
-      { src: img('bilflo-y-03-bilflo-free-gift.png'), caption: 'Free gift ticket, 3-month trial' },
-      { src: img('bilflo-y-04-bilflo-staffing-world-2021.png'), caption: 'Staffing World 2021 ticket' },
-      { src: img('logos-marks-11-amtec-bilflo-linkedin-banner.jpg'), caption: 'Amtec x Bilflo announcement banner' },
       {
         doc: [
           img('bilflo-core-flyer-01-core-flyer-front.jpg'),
-          img('bilflo-core-flyer-02-core-flyer-back.jpg'),
-        ],
+          img('bilflo-core-flyer-02-core-flyer-back.jpg')],
         caption: 'Core flyer, front and back',
       },
     ],
   },
   {
     id: 'johnnys-mobile-detail',
+    highlight: true,
     title: "Johnny's Mobile Detail",
     caption: 'Logo design for a mobile auto detailing service',
     category: 'branding',
@@ -162,6 +214,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'in-your-prime',
+    highlight: true,
     title: 'In Your Prime',
     caption: 'Logo design and product branding',
     category: 'branding',
@@ -191,6 +244,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-60-event',
+    highlight: true,
     title: 'Amtec 60 — The Event',
     caption: 'Invitation, program and signage for the anniversary party',
     category: 'graphic-design',
@@ -232,6 +286,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'mic-drop',
+    highlight: true,
     title: 'Mic Drop',
     caption: 'Logo design and collateral for a podcast brand',
     category: 'branding',
@@ -294,6 +349,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'fender-jaguar',
+    highlight: true,
     title: 'Fender Jaguar',
     caption: 'Guitar illustration',
     category: 'illustration',
@@ -346,6 +402,7 @@ export const work: WorkItem[] = [
      illustrations, so the set stays coherent even at that length. */
   {
     id: 'the-shop',
+    highlight: true,
     title: 'The Shop — Framed Prints',
     caption: 'Printable illustrations sold as home decor',
     category: 'illustration',
@@ -375,6 +432,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'guitar-print-les-paul',
+    highlight: true,
     title: 'Les Paul \u2014 Prints',
     caption: 'Guitar illustration offered as a print, three colorways',
     category: 'illustration',
@@ -419,6 +477,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'be-my-quarantine',
+    highlight: true,
     title: 'Be My Quarantine',
     caption: 'Illustration, 2020',
     category: 'illustration',
@@ -443,6 +502,7 @@ export const work: WorkItem[] = [
   /* ------------------------------ Web / UI --------------------------------- */
   {
     id: 'bilflo-site-walkthrough',
+    highlight: true,
     title: 'Bilflo — Site Walkthrough',
     caption: 'A walkthrough of the marketing site',
     category: 'web-ui',
@@ -452,6 +512,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-app',
+    highlight: true,
     title: 'Bilflo App Illustrations',
     caption: 'Spot illustrations for a workforce management product UI',
     category: 'web-ui',
@@ -478,6 +539,7 @@ export const work: WorkItem[] = [
   /* -------------------------------- 3D ------------------------------------- */
   {
     id: 'baby-artemis',
+    highlight: true,
     title: 'Baby Artemis',
     caption: 'Artemis rocket model with a collapsible exhaust flame',
     category: '3d',
@@ -500,6 +562,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'vw-thing',
+    highlight: true,
     title: 'VW Thing — Tooned',
     caption: 'Stylized Volkswagen Type 181 model',
     category: '3d',
@@ -571,6 +634,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'catalina-planter',
+    highlight: true,
     title: 'The Catalina Planter',
     caption: 'Planter design',
     category: '3d',
@@ -600,6 +664,7 @@ export const work: WorkItem[] = [
   /* ----------------------------- Videography ------------------------------- */
   {
     id: 'amtec-60-film',
+    highlight: true,
     title: '60 Years — A Film About Amtec',
     caption: 'Anniversary documentary — directed, shot and edited',
     category: 'videography',
@@ -609,6 +674,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-core-values',
+    highlight: true,
     wide: true,
     title: 'Our Core Values',
     caption: 'Internal brand film for Amtec Staffing',
@@ -655,6 +721,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-prismhr',
+    highlight: true,
     wide: true,
     title: 'PrismHR Integration',
     caption: 'Integration explainer — design, animation and edit',
@@ -709,6 +776,7 @@ export const work: WorkItem[] = [
   --------------------------------------------------------------------------- */
   {
     id: 'shine-ep',
+    highlight: true,
     title: 'SHINE — EP',
     caption: 'Four-track EP, 2015 — written, performed and produced',
     category: 'music',
@@ -771,6 +839,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-christmas-2022',
+    highlight: true,
     title: 'Amtec Christmas Card 2022',
     caption: 'Printed card and envelope',
     category: 'graphic-design',
@@ -793,6 +862,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'desert-christmas',
+    highlight: true,
     title: 'Desert Christmas',
     caption: 'A mid-century desert house on Christmas night',
     category: 'illustration',
@@ -803,17 +873,37 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'holiday-illustrations',
-    title: 'Holiday Illustrations',
-    caption: 'Christmas artwork drawn for cards and gifts',
+    id: 'lit-tree',
+    highlight: true,
+    title: 'Lit tree',
+    caption: 'Christmas artwork',
     category: 'illustration',
-    kind: 'carousel',
-    slides: [
-      { src: img('amtec-christmas-cards-15-xmas-2025-goody-edit-2.jpg'), caption: 'Lit tree' },
-      { src: img('amtec-christmas-cards-14-xmas-card-2024-mockup-1.jpg'), caption: '\u201cThe true light was coming into the world\u201d' },
-      { src: img('amtec-christmas-cards-03-2019-christmas-card-d3.png'), caption: 'Ornament badge' },
-      { src: img('amtec-christmas-cards-18-amtec-card-digital-gift.webp'), caption: '\u201cJoy to the world\u201d gift card' },
-    ],
+    kind: 'image',
+    src: img('amtec-christmas-cards-15-xmas-2025-goody-edit-2.jpg'),
+  },
+  {
+    id: 'the-true-light-was-coming-into-the-world',
+    title: '\u201cThe true light was coming into the world\u201d',
+    caption: 'Christmas artwork',
+    category: 'illustration',
+    kind: 'image',
+    src: img('amtec-christmas-cards-14-xmas-card-2024-mockup-1.jpg'),
+  },
+  {
+    id: 'ornament-badge',
+    title: 'Ornament badge',
+    caption: 'Christmas artwork',
+    category: 'illustration',
+    kind: 'image',
+    src: img('amtec-christmas-cards-03-2019-christmas-card-d3.png'),
+  },
+  {
+    id: 'joy-to-the-world-gift-card',
+    title: '\u201cJoy to the world\u201d gift card',
+    caption: 'Christmas artwork',
+    category: 'illustration',
+    kind: 'image',
+    src: img('amtec-christmas-cards-18-amtec-card-digital-gift.webp'),
   },
   {
     id: 'amtec-holiday-campaigns',
@@ -833,6 +923,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-bitz',
+    highlight: true,
     title: 'Amtec bitz Newsletters',
     caption: 'Industry newsletter identity and banner system',
     category: 'graphic-design',
@@ -979,6 +1070,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'tristaff-identity',
+    highlight: true,
     title: 'TriStaff — Identity',
     caption: 'Identity rollout for Amtec\u2019s TriStaff division',
     category: 'branding',
@@ -1007,6 +1099,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'economic-reports',
+    highlight: true,
     title: 'US Economic Report Series',
     caption: 'Monthly labour-market report design',
     category: 'graphic-design',
@@ -1049,30 +1142,68 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'amtec-webinars',
-    title: 'Webinar Graphics',
-    caption: 'Promotion and backgrounds for the webinar series',
+    id: 'attracting-retaining',
+    title: 'Attracting & retaining',
+    caption: 'Webinar promotion for Amtec',
     category: 'graphic-design',
-    kind: 'carousel',
-    slides: [
-      { src: img('campaign-graphics-07-attracting-retaining-webinar-banner-4.png'), caption: 'Attracting & retaining' },
-      { src: img('campaign-graphics-08-ai-wont-save-your-hiring.png'), caption: '\u201cAI won\u2019t save your hiring\u201d' },
-      { src: img('campaign-graphics-09-improve-your-hiring-process-2.webp'), caption: 'Improve your hiring process' },
-      { src: img('campaign-graphics-10-improve-your-hiring-process-zoom-2.png'), caption: 'Zoom background' },
-    ],
+    kind: 'image',
+    src: img('campaign-graphics-07-attracting-retaining-webinar-banner-4.png'),
   },
   {
-    id: 'amtec-email-display',
-    title: 'Email & Display Banners',
-    caption: 'Email headers and paid placements',
+    id: 'ai-won-u2019t-save-your-hiring',
+    title: '\u201cAI won\u2019t save your hiring\u201d',
+    caption: 'Webinar promotion for Amtec',
     category: 'graphic-design',
-    kind: 'carousel',
-    slides: [
-      { src: img('campaign-graphics-11-hire-better-email.png'), caption: 'Hire better' },
-      { src: img('campaign-graphics-12-remote-workers-email.png'), caption: 'Remote workers' },
-      { src: img('campaign-graphics-13-indeed-banner-3.jpg'), caption: 'Indeed banner' },
-      { src: img('campaign-graphics-14-google-forms-banner.png'), caption: 'Google Forms banner' },
-    ],
+    kind: 'image',
+    src: img('campaign-graphics-08-ai-wont-save-your-hiring.png'),
+  },
+  {
+    id: 'improve-your-hiring-process',
+    title: 'Improve your hiring process',
+    caption: 'Webinar promotion for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-09-improve-your-hiring-process-2.webp'),
+  },
+  {
+    id: 'zoom-background',
+    title: 'Zoom background',
+    caption: 'Webinar promotion for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-10-improve-your-hiring-process-zoom-2.png'),
+  },
+  {
+    id: 'hire-better',
+    title: 'Hire better',
+    caption: 'Email header and display advertising',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-11-hire-better-email.png'),
+  },
+  {
+    id: 'remote-workers',
+    title: 'Remote workers',
+    caption: 'Email header and display advertising',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-12-remote-workers-email.png'),
+  },
+  {
+    id: 'indeed-banner',
+    title: 'Indeed banner',
+    caption: 'Email header and display advertising',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-13-indeed-banner-3.jpg'),
+  },
+  {
+    id: 'google-forms-banner',
+    title: 'Google Forms banner',
+    caption: 'Email header and display advertising',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('campaign-graphics-14-google-forms-banner.png'),
   },
   /* ---------------------------------------------------------------------------
      These were one 21-slide "Logos & Marks" carousel — a folder, not a piece.
@@ -1186,29 +1317,60 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'amtec-recognition',
-    title: 'Recognition',
-    caption: 'Milestones and values, published internally',
+    id: 'workiversary-u2014-seven-years',
+    title: 'Workiversary \u2014 seven years',
+    caption: 'Recognition graphic for Amtec',
     category: 'graphic-design',
-    kind: 'carousel',
-    slides: [
-      { src: img('amtec-culture-01-happy-workiversary-zac-7.webp'), caption: 'Workiversary \u2014 seven years' },
-      { src: img('amtec-culture-02-happy-workiversary-barrett-20.webp'), caption: 'Workiversary \u2014 twenty years' },
-      { src: img('amtec-culture-03-core-values-2022.png'), caption: 'Core values, 2022' },
-      { src: img('amtec-culture-04-rds-linkedin.jpg'), caption: 'Recruiter spotlight' },
-    ],
+    kind: 'image',
+    src: img('amtec-culture-01-happy-workiversary-zac-7.webp'),
   },
   {
-    id: 'amtec-invitations',
-    title: 'Event Invitations',
-    caption: 'Invitations for company dinners and retreats',
+    id: 'workiversary-u2014-twenty-years',
+    title: 'Workiversary \u2014 twenty years',
+    caption: 'Recognition graphic for Amtec',
     category: 'graphic-design',
-    kind: 'carousel',
-    slides: [
-      { src: img('amtec-culture-05-owners-only-retreat-2019-d2.webp'), caption: 'Owners retreat, 2019' },
-      { src: img('amtec-culture-06-ruths-chris-invite.png'), caption: 'Ruth\u2019s Chris dinner' },
-      { src: img('amtec-culture-07-nfuse-invite-2026.webp'), caption: 'nFuse, 2026' },
-    ],
+    kind: 'image',
+    src: img('amtec-culture-02-happy-workiversary-barrett-20.webp'),
+  },
+  {
+    id: 'core-values-2022',
+    title: 'Core values, 2022',
+    caption: 'Recognition graphic for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('amtec-culture-03-core-values-2022.png'),
+  },
+  {
+    id: 'recruiter-spotlight',
+    title: 'Recruiter spotlight',
+    caption: 'Recognition graphic for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('amtec-culture-04-rds-linkedin.jpg'),
+  },
+  {
+    id: 'owners-retreat-2019',
+    title: 'Owners retreat, 2019',
+    caption: 'Event invitation for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('amtec-culture-05-owners-only-retreat-2019-d2.webp'),
+  },
+  {
+    id: 'ruth-u2019s-chris-dinner',
+    title: 'Ruth\u2019s Chris dinner',
+    caption: 'Event invitation for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('amtec-culture-06-ruths-chris-invite.png'),
+  },
+  {
+    id: 'nfuse-2026',
+    title: 'nFuse, 2026',
+    caption: 'Event invitation for Amtec',
+    category: 'graphic-design',
+    kind: 'image',
+    src: img('amtec-culture-07-nfuse-invite-2026.webp'),
   },
   {
     id: 'amtec-brand-docs',
@@ -1513,6 +1675,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'tools-of-the-trade',
+    highlight: true,
     title: 'Tools of the trade',
     caption: 'Editorial illustration for Amtec',
     category: 'illustration',
@@ -1577,6 +1740,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'purple-squirrel',
+    highlight: true,
     title: 'Purple squirrel',
     caption: 'Editorial illustration for Amtec',
     category: 'illustration',
@@ -1597,6 +1761,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-web',
+    highlight: true,
     title: 'Amtec Website',
     caption: 'Marketing site design for a staffing firm',
     category: 'web-ui',
@@ -1876,6 +2041,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'clearly-filtered',
+    highlight: true,
     title: 'Clearly Filtered',
     caption: 'Product marketing for a water filtration brand',
     category: 'graphic-design',
@@ -1900,13 +2066,14 @@ export const work: WorkItem[] = [
   /* --------------------------- Client brand work --------------------------- */
   {
     id: 'evergreen-identity',
+    highlight: true,
     title: 'Evergreen — Identity',
     caption: 'Badge mark and brand system for an outdoor company',
     category: 'branding',
     kind: 'carousel',
     slides: [
-      { src: img('logos-marks-add-05-eg-lockup-xl.png'), caption: 'Primary lockup' },
       { src: img('evergreen-01-evergreen-badge-mu1-1.webp'), caption: 'Badge, embroidered' },
+      { src: img('logos-marks-add-05-eg-lockup-xl.png'), caption: 'Primary lockup' },
       { src: img('evergreen-02-evergreen-badge-mu2.webp'), caption: 'Badge, applied' },
       { src: img('evergreen-03-evergreen-badge-mu2-1.webp'), caption: 'Badge, alternate colorway' },
       {
@@ -2008,6 +2175,7 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-display-ads',
+    highlight: true,
     title: 'Bilflo Display Ads',
     caption: 'A templated display campaign for a workforce platform',
     category: 'graphic-design',
