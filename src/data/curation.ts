@@ -60,6 +60,19 @@ export const featured: Partial<Record<Category, string[]>> = {};
  */
 export const hidden: string[] = [];
 
+/**
+ * Pieces moved to a different category than work.ts gives them. The board
+ * writes this when you drag a card from one column to another.
+ */
+export const moves: Record<string, Category> = {};
+
+/**
+ * Authored carousels broken back into one piece per slide, so their contents
+ * can be rearranged like anything else. Each part gets a stable id of
+ * `<id>--<n>`, which merges and moves can then refer to.
+ */
+export const splits: string[] = [];
+
 /** Several pieces shown as one carousel. */
 export type Merge = {
   /** Id for the combined piece; must not clash with one in work.ts. */

@@ -14,15 +14,21 @@ const CURATION = fileURLToPath(new URL('./src/data/curation.ts', import.meta.url
  * @param {Record<string, string[] | undefined>} featured
  * @param {string[]} hidden
  * @param {{id:string,title:string,caption?:string,category?:string,members:string[]}[]} merges
+ * @param {Record<string,string>} moves
+ * @param {string[]} splits
  * @returns {string}
  */
-function renderCuration(highlights, featured, hidden, merges) {
+function renderCuration(highlights, featured, hidden, merges, moves, splits) {
   const list = highlights.map((/** @type {string} */ id) => `  '${id}',`).join('\n');
   const pinned = Object.entries(featured)
     .filter(([, ids]) => ids?.length)
     .map(([cat, ids]) => `  '${cat}': [${(ids ?? []).map((/** @type {string} */ id) => `'${id}'`).join(', ')}],`)
     .join('\n');
   const hide = hidden.map((/** @type {string} */ id) => `  '${id}',`).join('\n');
+  const moved = Object.entries(moves)
+    .map(([id, cat]) => `  '${id}': '${cat}',`)
+    .join('\n');
+  const splat = splits.map((/** @type {string} */ id) => `  '${id}',`).join('\n');
   const q = (/** @type {string} */ v) => `'${String(v).replace(/'/g, "\\'")}'`;
   const combos = merges
     .map((m) => {
@@ -68,6 +74,19 @@ export const featured: Partial<Record<Category, string[]>> = {${
  */
 export const hidden: string[] = [${hide ? `\n${hide}\n` : ''}];
 
+/**
+ * Pieces moved to a different category than work.ts gives them. The board
+ * writes this when you drag a card from one column to another.
+ */
+export const moves: Record<string, Category> = {${moved ? `\n${moved}\n` : ''}};
+
+/**
+ * Authored carousels broken back into one piece per slide, so their contents
+ * can be rearranged like anything else. Each part gets a stable id of
+ * \`<id>--<n>\`, which merges and moves can then refer to.
+ */
+export const splits: string[] = [${splat ? `\n${splat}\n` : ''}];
+
 /** Several pieces shown as one carousel. */
 export type Merge = {
   /** Id for the combined piece; must not clash with one in work.ts. */
@@ -110,10 +129,25 @@ const curateSaver = {
       });
       req.on('end', async () => {
         try {
-          const { highlights = [], featured = {}, hidden = [], merges = [] } = JSON.parse(body);
+          const {
+            highlights = [],
+            featured = {},
+            hidden = [],
+            merges = [],
+            moves = {},
+            splits = [],
+          } = JSON.parse(body);
+          // Split parts carry a `--n` suffix, so ids are slugs plus that.
           const ok = (/** @type {unknown} */ v) =>
-            Array.isArray(v) && v.every((s) => typeof s === 'string' && /^[a-z0-9-]+$/.test(s));
-          if (!ok(highlights) || !ok(hidden) || !Object.values(featured).every(ok)) {
+            Array.isArray(v) &&
+            v.every((s) => typeof s === 'string' && /^[a-z0-9-]+(--\d+)?$/.test(s));
+          if (
+            !ok(highlights) ||
+            !ok(hidden) ||
+            !ok(splits) ||
+            !ok(Object.keys(moves)) ||
+            !Object.values(featured).every(ok)
+          ) {
             throw new Error('ids must be lowercase slugs');
           }
           for (const m of merges) {
@@ -124,7 +158,11 @@ const curateSaver = {
               throw new Error(`merge "${m.id}" needs a title`);
             }
           }
-          await writeFile(CURATION, renderCuration(highlights, featured, hidden, merges), 'utf8');
+          await writeFile(
+            CURATION,
+            renderCuration(highlights, featured, hidden, merges, moves, splits),
+            'utf8',
+          );
           res.setHeader('content-type', 'application/json');
           res.end(JSON.stringify({ ok: true, count: highlights.length }));
         } catch (err) {

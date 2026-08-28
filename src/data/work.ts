@@ -1,6 +1,6 @@
 import type { ImageMetadata } from 'astro';
 import type { Category } from './site';
-import { featured, hidden, highlights, merges } from './curation';
+import { featured, hidden, highlights, merges, moves, splits } from './curation';
 
 /* ---------------------------------------------------------------------------
    Adding work is two steps:
@@ -2213,26 +2213,69 @@ const catalog: WorkItem[] = [
 ];
 
 /**
- * Apply the editorial layer from curation.ts: drop anything hidden, then fold
- * merged pieces into a single carousel. A merge takes the grid position of its
- * first member, so combining two tiles does not reshuffle the page around them.
+ * Expand an authored carousel into one piece per slide, so its contents can be
+ * rearranged like anything else. Ids are derived from position, not from the
+ * caption, so they stay stable when a caption is reworded.
+ */
+function explode(item: WorkItem): WorkItem[] {
+  if (item.kind !== 'carousel') return [item];
+  return item.slides.map((slide, i) => {
+    const caption = slide.caption;
+    return {
+      id: `${item.id}--${i}`,
+      title: caption || `${item.title} ${i + 1}`,
+      caption: item.caption,
+      category: item.category,
+      ...(isImageSlide(slide)
+        ? { kind: 'image' as const, src: slide.src }
+        : { kind: 'carousel' as const, slides: [slide] }),
+    };
+  });
+}
+
+/**
+ * Apply the editorial layer from curation.ts, in the order the overrides
+ * depend on each other: split first so merges and moves can name the parts,
+ * then drop what is hidden, then fold merges together. A merge takes the grid
+ * position of its first member, so combining two cards does not reshuffle the
+ * page around them.
  */
 function compose(): WorkItem[] {
-  const hide = new Set(checkIds(hidden, 'hidden'));
-  const byId = new Map(catalog.map((item) => [item.id, item]));
-  const authored = new Set(byId.keys());
+  const split = new Set(checkIds(splits, 'splits'));
+  const expanded: WorkItem[] = [];
+  for (const item of catalog) {
+    if (split.has(item.id)) expanded.push(...explode(item));
+    else expanded.push(item);
+  }
+
+  const byId = new Map(expanded.map((item) => [item.id, item]));
+  const known = new Set(byId.keys());
+  const check = (ids: readonly string[], where: string) => {
+    for (const id of ids) {
+      if (!known.has(id)) {
+        throw new Error(
+          `[curation.ts] ${where} names "${id}", which is not a piece. ` +
+            `(${known.size} available; split parts are named <id>--<n>.)`,
+        );
+      }
+    }
+  };
+
+  check(hidden, 'hidden');
+  check(Object.keys(moves), 'moves');
+  const hide = new Set(hidden);
 
   const combined = new Map<string, WorkItem>();
   const ownerOf = new Map<string, string>();
 
   for (const merge of merges) {
-    if (authored.has(merge.id)) {
+    if (known.has(merge.id)) {
       throw new Error(
-        `[curation.ts] merge "${merge.id}" reuses an id from work.ts. Give the ` +
+        `[curation.ts] merge "${merge.id}" reuses an existing id. Give the ` +
           `combined piece its own id.`,
       );
     }
-    checkIds(merge.members, `merges["${merge.id}"].members`);
+    check(merge.members, `merges["${merge.id}"].members`);
 
     const slides: Slide[] = [];
     for (const id of merge.members) {
@@ -2265,7 +2308,7 @@ function compose(): WorkItem[] {
       id: merge.id,
       title: merge.title,
       caption: merge.caption ?? first.caption,
-      category: merge.category ?? first.category,
+      category: merge.category ?? moves[first.id] ?? first.category,
       ...(merge.members.some((id) => byId.get(id)?.wide) ? { wide: true } : {}),
       kind: 'carousel',
       slides,
@@ -2274,7 +2317,7 @@ function compose(): WorkItem[] {
 
   const out: WorkItem[] = [];
   const placed = new Set<string>();
-  for (const item of catalog) {
+  for (const item of expanded) {
     if (hide.has(item.id)) continue;
     const owner = ownerOf.get(item.id);
     if (owner) {
@@ -2285,7 +2328,8 @@ function compose(): WorkItem[] {
       }
       continue;
     }
-    out.push(item);
+    const moved = moves[item.id];
+    out.push(moved && moved !== item.category ? { ...item, category: moved } : item);
   }
   return out;
 }
@@ -2295,3 +2339,6 @@ export const work: WorkItem[] = compose();
 
 /** Everything as authored, overrides not applied — /curate needs the full set. */
 export const catalogue: WorkItem[] = catalog;
+
+/** One piece per slide, for a carousel the board has split apart. */
+export const explodeItem = explode;
