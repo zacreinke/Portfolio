@@ -4,38 +4,68 @@
  * src/pages so Astro never auto-routes it, and astro.config.mjs only injects
  * the /curate route when the command is `dev`. It cannot ship.
  *
- * Pick Highlights by looking at the work rather than reading ids, then Save
- * writes src/data/curation.ts through the dev-server middleware and HMR
- * re-renders the real site behind you.
+ * Built around the actual job. There are 180 pieces and roughly 30 belong in
+ * Highlights, so for most of them the answer is "no" — the dominant activity
+ * is looking, not clicking. Opening a piece gives you a real look at it and
+ * the keyboard does the rest: arrow through the whole catalogue and tap one
+ * key when something earns its place.
+ *
+ * Everything it writes is an override in curation.ts. work.ts is never
+ * touched, so every decision here is reversible.
  */
 import { getImage } from 'astro:assets';
-import { catalogue, coverOf } from '../data/work';
+import type { ImageMetadata } from 'astro';
+import { catalogue, coverOf, isDocSlide, isImageSlide } from '../data/work';
 import type { WorkItem } from '../data/work';
 import { highlights, featured, hidden, merges } from '../data/curation';
 import { categories, categoryLabel } from '../data/site';
 import '../styles/global.css';
 
+/** Widths the site already generates, so these are cache hits, not new work. */
+const sized = async (src: ImageMetadata, width: number) =>
+  src.format === 'gif' || src.format === 'svg'
+    ? src.src
+    : (await getImage({ src, width, format: 'webp', quality: 72 })).src;
+
+/** Every still in a piece, so the viewer can show the whole set. */
+function stillsOf(item: WorkItem): { src: ImageMetadata; caption: string }[] {
+  if (item.kind === 'image') return [{ src: item.src, caption: item.caption }];
+  if (item.kind !== 'carousel') return [{ src: item.poster, caption: item.caption }];
+  const out: { src: ImageMetadata; caption: string }[] = [];
+  for (const slide of item.slides) {
+    if (isImageSlide(slide)) out.push({ src: slide.src, caption: slide.caption });
+    else if (isDocSlide(slide)) {
+      slide.doc.forEach((page, i) =>
+        out.push({ src: page, caption: `${slide.caption} — page ${i + 1}` }),
+      );
+    }
+  }
+  return out.length ? out : [{ src: coverOf(item), caption: item.caption }];
+}
+
 const items = await Promise.all(
-  catalogue.map(async (item: WorkItem) => {
-    const cover = coverOf(item);
-    const thumb =
-      cover.format === 'gif' || cover.format === 'svg'
-        ? cover.src
-        : (await getImage({ src: cover, width: 320, format: 'webp', quality: 70 })).src;
-    return {
-      id: item.id,
-      title: item.title,
-      category: item.category,
-      categoryLabel: categoryLabel(item.category),
-      thumb,
-      /** Players cannot become carousel slides, so they cannot be combined. */
-      combinable: item.kind === 'image' || item.kind === 'carousel',
-      slides: item.kind === 'carousel' ? item.slides.length : 1,
-    };
-  }),
+  catalogue.map(async (item: WorkItem) => ({
+    id: item.id,
+    title: item.title,
+    caption: item.caption,
+    category: item.category,
+    categoryLabel: categoryLabel(item.category),
+    thumb: await sized(coverOf(item), 400),
+    slides: await Promise.all(
+      stillsOf(item)
+        .slice(0, 12)
+        .map(async (s) => ({ src: await sized(s.src, 1200), caption: s.caption })),
+    ),
+    count: item.kind === 'carousel' ? item.slides.length : 1,
+    /** Players cannot become carousel slides, so they cannot be combined. */
+    combinable: item.kind === 'image' || item.kind === 'carousel',
+  })),
 );
 
 const state = { highlights, featured, hidden, merges, items, categories };
+const counts = Object.fromEntries(
+  categories.map((c) => [c.id, items.filter((i) => i.category === c.id).length]),
+);
 ---
 
 <html lang="en">
@@ -46,33 +76,40 @@ const state = { highlights, featured, hidden, merges, items, categories };
     <title>Curate — local only</title>
   </head>
   <body class="bg-page text-ink">
-    <header
-      class="sticky top-0 z-20 flex flex-wrap items-center gap-4 border-b border-line bg-page/95 px-6 py-4 backdrop-blur"
-    >
-      <div class="mr-auto">
-        <p class="font-heading text-[22px] font-medium tracking-[-0.02em]">Curate</p>
-        <p class="text-[13px] opacity-60">
-          Local tool — never deployed. Click a cover to add it to Highlights and drag
-          the chips to reorder. <b>↑</b> pins to the top of its own tab. Tick the box to
-          select, then combine or remove. Nothing here edits work.ts, so it all undoes.
-        </p>
+    <header class="sticky top-0 z-20 border-b border-line bg-page/95 px-6 py-3 backdrop-blur">
+      <div class="flex flex-wrap items-center gap-3">
+        <p class="font-heading text-[20px] font-medium tracking-[-0.02em]">Curate</p>
+        <input
+          id="search"
+          type="search"
+          placeholder="Search…  press /"
+          class="min-w-[200px] flex-1 rounded-full border border-line bg-card px-4 py-2 text-[13px] outline-none focus:border-ink"
+        />
+        <span id="count" class="label-caps tabular-nums opacity-60"></span>
+        <span id="dirty" hidden class="label-caps rounded-full bg-ink/10 px-3 py-1 text-[10px]">
+          unsaved
+        </span>
+        <button
+          type="button"
+          id="copy"
+          class="label-caps cursor-pointer rounded-full border border-line px-4 py-2 transition-colors hover:bg-pill"
+        >
+          Copy
+        </button>
+        <button
+          type="button"
+          id="save"
+          class="label-caps cursor-pointer rounded-full bg-ink px-5 py-2 text-card transition-opacity hover:opacity-80"
+        >
+          Save
+        </button>
+        <span id="status" class="label-caps opacity-0 transition-opacity"></span>
       </div>
-      <span id="count" class="label-caps tabular-nums opacity-60"></span>
-      <button
-        type="button"
-        id="copy"
-        class="label-caps cursor-pointer rounded-full border border-line px-4 py-2 transition-colors hover:bg-pill"
-      >
-        Copy
-      </button>
-      <button
-        type="button"
-        id="save"
-        class="label-caps cursor-pointer rounded-full bg-ink px-5 py-2 text-card transition-opacity hover:opacity-80"
-      >
-        Save
-      </button>
-      <span id="status" class="label-caps opacity-0 transition-opacity"></span>
+      <p class="mt-1.5 text-[12px] opacity-55">
+        Click a piece to open it, then <b>←</b> <b>→</b> through everything. <b>H</b> highlight
+        · <b>P</b> pin · <b>X</b> remove · <b>S</b> select · <b>Esc</b> close. Nothing here
+        edits work.ts, so it all undoes.
+      </p>
     </header>
 
     <main class="px-6 py-6">
@@ -87,64 +124,100 @@ const state = { highlights, featured, hidden, merges, items, categories };
       </section>
 
       <section class="mb-10">
-        <h2 class="label-caps mb-3 opacity-60">Highlights — drag to reorder</h2>
+        <h2 class="label-caps mb-3 opacity-60">
+          Highlights — drag to reorder; this is the order they render in
+        </h2>
         <ol
           id="chosen"
-          class="flex min-h-[92px] flex-wrap gap-2 rounded-[18px] border border-dashed border-line p-3"
+          class="flex min-h-[96px] flex-wrap gap-2 rounded-[18px] border border-dashed border-line p-3"
         >
         </ol>
       </section>
 
       {
         categories.map((c) => (
-          <section class="mb-10" data-cat={c.id}>
-            <h2 class="label-caps mb-3 opacity-60">{c.label}</h2>
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-4">
+          <section class="mb-10" data-section={c.id}>
+            <h2 class="label-caps mb-3 flex items-center gap-2 opacity-60">
+              {c.label}
+              <span class="tabular-nums opacity-50">{counts[c.id]}</span>
+            </h2>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-4">
               {items
                 .filter((i) => i.category === c.id)
                 .map((i) => (
-                  <figure class="group relative" data-card data-id={i.id} data-cat={i.category}>
+                  <figure
+                    class="group relative"
+                    data-card
+                    data-id={i.id}
+                    data-cat={i.category}
+                    data-title={i.title.toLowerCase()}
+                  >
                     <button
                       type="button"
-                      data-pick
-                      class="block w-full cursor-pointer overflow-hidden rounded-[14px] border-2 border-line bg-card transition-colors"
+                      data-open
+                      title="Open"
+                      class="block w-full cursor-zoom-in overflow-hidden rounded-[14px] border-2 border-line bg-card transition-colors"
                     >
-                      <span class="relative block w-full" style="aspect-ratio:1.2">
+                      <span class="relative block w-full" style="aspect-ratio:1.15">
                         <img
                           src={i.thumb}
                           alt=""
                           loading="lazy"
                           decoding="async"
-                          class="absolute inset-0 size-full object-contain p-2"
+                          class="absolute inset-0 size-full object-cover"
                         />
                       </span>
                     </button>
+
+                    <div class="pointer-events-none absolute inset-x-2 top-2 flex items-start justify-between opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <button
+                        type="button"
+                        data-select
+                        title="Select for combining or removing"
+                        class="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-[8px] border-2 border-card/70 bg-ink/45 text-[12px] leading-none text-card backdrop-blur-sm"
+                      />
+                      <span class="pointer-events-auto flex gap-1">
+                        <button
+                          type="button"
+                          data-hl
+                          title="Highlight"
+                          class="flex size-7 cursor-pointer items-center justify-center rounded-full bg-ink/45 text-[12px] text-card backdrop-blur-sm"
+                        >
+                          ★
+                        </button>
+                        <button
+                          type="button"
+                          data-pin
+                          title="Pin to top of category"
+                          class="flex size-7 cursor-pointer items-center justify-center rounded-full bg-ink/45 text-[12px] text-card backdrop-blur-sm"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          data-remove
+                          title="Remove from the site"
+                          class="flex size-7 cursor-pointer items-center justify-center rounded-full bg-ink/45 text-[12px] text-card backdrop-blur-sm"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    </div>
+
                     <span
                       data-badge
-                      class="pointer-events-none absolute top-2 left-2 hidden size-7 items-center justify-center rounded-full bg-ink text-[12px] font-semibold text-card tabular-nums"
+                      class="pointer-events-none absolute top-2 left-2 hidden size-7 items-center justify-center rounded-full bg-ink text-[12px] font-semibold text-card tabular-nums group-hover:opacity-0"
                     />
-                    <button
-                      type="button"
-                      data-pin
-                      title="Pin to the top of this category"
-                      class="absolute top-2 right-2 flex size-7 cursor-pointer items-center justify-center rounded-full border border-line bg-card/90 text-[12px] transition-colors"
+                    <span
+                      data-pinned
+                      hidden
+                      class="pointer-events-none absolute bottom-2 left-2 rounded-full bg-ink/55 px-2 py-0.5 text-[10px] font-semibold text-card backdrop-blur-sm group-hover:opacity-0"
                     >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      data-select
-                      data-combinable={i.combinable ? '1' : undefined}
-                      title={
-                        i.combinable
-                          ? 'Select'
-                          : 'Select — players cannot be combined, only removed'
-                      }
-                      class="absolute bottom-2 left-2 flex size-6 cursor-pointer items-center justify-center rounded-[7px] border-2 border-line bg-card/90 text-[12px] leading-none transition-colors"
-                    />
-                    {i.slides > 1 && (
-                      <span class="pointer-events-none absolute right-2 bottom-2 rounded-full bg-ink/70 px-2 py-0.5 text-[10px] font-semibold text-card tabular-nums">
-                        {i.slides}
+                      pinned
+                    </span>
+                    {i.count > 1 && (
+                      <span class="pointer-events-none absolute right-2 bottom-2 rounded-full bg-ink/55 px-2 py-0.5 text-[10px] font-semibold text-card tabular-nums backdrop-blur-sm">
+                        {i.count}
                       </span>
                     )}
                     <figcaption class="mt-1.5 text-[12px] leading-tight opacity-70">
@@ -156,6 +229,9 @@ const state = { highlights, featured, hidden, merges, items, categories };
           </section>
         ))
       }
+      <p id="empty" hidden class="py-20 text-center text-[14px] opacity-55">
+        Nothing matches that search.
+      </p>
     </main>
 
     <div
@@ -168,7 +244,7 @@ const state = { highlights, featured, hidden, merges, items, categories };
         id="merge-title"
         type="text"
         placeholder="Title for the combined piece"
-        class="min-w-[240px] flex-1 rounded-full border border-line bg-page px-4 py-2 text-[13px] outline-none focus:border-ink"
+        class="min-w-[220px] flex-1 rounded-full border border-line bg-page px-4 py-2 text-[13px] outline-none focus:border-ink"
       />
       <select
         id="merge-cat"
@@ -198,6 +274,65 @@ const state = { highlights, featured, hidden, merges, items, categories };
         Clear
       </button>
       <span id="bar-note" class="text-[12px] opacity-60"></span>
+    </div>
+
+    {/* The look. This is where curating actually happens. */}
+    <div
+      id="viewer"
+      hidden
+      class="fixed inset-0 z-40 flex flex-col bg-ink/95 text-card backdrop-blur-xl"
+    >
+      <div class="flex shrink-0 flex-wrap items-center gap-2 px-5 py-3">
+        <span id="v-pos" class="label-caps tabular-nums opacity-55"></span>
+        <span id="v-cat" class="label-caps opacity-55"></span>
+        <span class="mr-auto"></span>
+        <button type="button" data-v="hl" class="label-caps cursor-pointer rounded-full px-4 py-2">
+          ★ Highlight <span class="opacity-45">H</span>
+        </button>
+        <button type="button" data-v="pin" class="label-caps cursor-pointer rounded-full px-4 py-2">
+          ↑ Pin <span class="opacity-45">P</span>
+        </button>
+        <button type="button" data-v="sel" class="label-caps cursor-pointer rounded-full px-4 py-2">
+          Select <span class="opacity-45">S</span>
+        </button>
+        <button type="button" data-v="rm" class="label-caps cursor-pointer rounded-full px-4 py-2">
+          ✕ Remove <span class="opacity-45">X</span>
+        </button>
+        <button
+          type="button"
+          data-v="close"
+          class="label-caps cursor-pointer rounded-full px-3 py-2 opacity-70"
+        >
+          Esc
+        </button>
+      </div>
+
+      <div class="relative flex min-h-0 flex-1 items-center justify-center px-14">
+        <button
+          type="button"
+          data-v="prev"
+          aria-label="Previous"
+          class="absolute left-3 flex size-11 cursor-pointer items-center justify-center rounded-full text-[24px] hover:bg-card/15"
+        >
+          ‹
+        </button>
+        <img id="v-img" alt="" class="max-h-full max-w-full rounded-[12px] object-contain" />
+        <button
+          type="button"
+          data-v="next"
+          aria-label="Next"
+          class="absolute right-3 flex size-11 cursor-pointer items-center justify-center rounded-full text-[24px] hover:bg-card/15"
+        >
+          ›
+        </button>
+      </div>
+
+      <div class="shrink-0 px-5 pt-3 pb-4 text-center">
+        <p id="v-title" class="font-heading text-[17px] font-medium"></p>
+        <p id="v-cap" class="mt-0.5 text-[13px] opacity-60"></p>
+        <div id="v-thumbs" class="no-scrollbar mt-2 flex justify-center gap-1.5 overflow-x-auto">
+        </div>
+      </div>
     </div>
 
     <script is:inline set:html={`window.__CURATE__ = ${JSON.stringify(state)};`} />
