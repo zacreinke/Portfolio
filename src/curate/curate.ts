@@ -21,6 +21,7 @@ type Card = {
   thumb: string;
   slides: Slide[];
   count: number;
+  type: string | null;
   splittable: boolean;
   combinable: boolean;
 };
@@ -75,6 +76,22 @@ const thumbOf = (id: string) => {
   const combo = combos.find((c) => c.id === id);
   return base.get(combo ? combo.members[0]! : id)?.thumb ?? '';
 };
+/**
+ * A set inherits a type only when everything in it agrees; the moment it holds
+ * two kinds it goes unlabelled, the same rule the pieces follow.
+ */
+const typeLabel = (id: string): string | null => {
+  const combo = combos.find((c) => c.id === id);
+  if (!combo) {
+    const t = base.get(id)?.type ?? null;
+    return t === 'Image' ? null : t;
+  }
+  const kinds = new Set(combo.members.map((m) => base.get(m)?.type ?? null));
+  if (kinds.size !== 1) return null;
+  const only = [...kinds][0];
+  return only === 'Image' ? null : (only ?? null);
+};
+
 const countOf = (id: string) => {
   const combo = combos.find((c) => c.id === id);
   if (!combo) return base.get(id)?.count ?? 1;
@@ -222,11 +239,18 @@ function cardEl(id: string, col: string): HTMLElement {
         <img src="${thumbOf(id)}" alt="" loading="lazy"
              class="absolute inset-0 size-full object-cover" />
       </span>
-      ${
-        combo
-          ? `<span class="absolute top-1.5 left-1.5 rounded-full bg-ink px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.06em] text-card uppercase">set</span>`
-          : ''
-      }
+      <span class="absolute top-1.5 left-1.5 flex gap-1">
+        ${
+          combo
+            ? `<span class="rounded-full bg-ink px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.06em] text-card uppercase">set</span>`
+            : ''
+        }
+        ${
+          typeLabel(id)
+            ? `<span class="rounded-full bg-ink/55 px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.06em] text-card uppercase backdrop-blur-sm">${typeLabel(id)}</span>`
+            : ''
+        }
+      </span>
     </div>
     <p class="mt-1 line-clamp-2 px-0.5 text-[11px] leading-tight opacity-75">${titleOf(id)}</p>`;
 

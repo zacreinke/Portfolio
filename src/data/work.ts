@@ -125,14 +125,42 @@ function checkIds(ids: readonly string[], where: string): string[] {
   return [...ids];
 }
 
-/** Highlight ids in display order, verified to exist. */
-export const highlightOrder = (): string[] => checkIds(highlights, 'highlights');
+/**
+ * Highlights and column order name pieces as the site actually renders them,
+ * which is after splits and merges — so they are checked against the composed
+ * result, not the authored catalogue. Checking against `catalog` rejected
+ * legitimate split parts like `amtec-60-event--0`.
+ */
+function checkRendered(ids: readonly string[], where: string): string[] {
+  const known = new Set(work.map((w) => w.id));
+  for (const id of ids) {
+    if (known.has(id)) continue;
+    const near = [...known]
+      .map((k) => {
+        const parts = id.split(/[-]+/);
+        return { k, score: parts.filter((p) => p && k.includes(p)).length };
+      })
+      .filter((m) => m.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map((m) => m.k);
+    throw new Error(
+      `[curation.ts] ${where} names "${id}", which the site does not render.` +
+        (near.length ? ` Did you mean: ${near.join(', ')}?` : '') +
+        ` (${known.size} pieces available.)`,
+    );
+  }
+  return [...ids];
+}
 
-/** Pinned ids per category, verified to exist. */
+/** Highlight ids in display order, verified to exist. */
+export const highlightOrder = (): string[] => checkRendered(highlights, 'highlights');
+
+/** Column order per category, verified to exist. */
 export function featuredOrder(): Partial<Record<Category, string[]>> {
   const out: Partial<Record<Category, string[]>> = {};
   for (const [cat, ids] of Object.entries(featured)) {
-    out[cat as Category] = checkIds(ids ?? [], `featured.${cat}`);
+    out[cat as Category] = checkRendered(ids ?? [], `featured.${cat}`);
   }
   return out;
 }

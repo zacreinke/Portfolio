@@ -47,6 +47,21 @@ function stillsOf(item: WorkItem): { src: ImageMetadata; caption: string }[] {
 }
 
 /**
+ * What a card is, in one word. A carousel holding more than one kind of thing
+ * gets no label, because there is no single true answer for it — better silent
+ * than wrong.
+ */
+function typeOf(item: WorkItem): string | null {
+  if (item.kind === 'video') return 'Video';
+  if (item.kind === 'embed') return item.embed.includes('soundcloud') ? 'Audio' : 'Video';
+  if (item.kind === 'image') return 'Image';
+  const kinds = new Set(
+    item.slides.map((s) => ('model' in s ? '3D' : isDocSlide(s) ? 'Doc' : 'Image')),
+  );
+  return kinds.size === 1 ? [...kinds][0]! : null;
+}
+
+/**
  * Every piece the board can show: the catalogue, with any carousel that has
  * been split apart replaced by its parts.
  */
@@ -68,6 +83,7 @@ const cards = await Promise.all(
         .map(async (s) => ({ src: await sized(s.src, 800), caption: s.caption })),
     ),
     count: item.kind === 'carousel' ? item.slides.length : 1,
+    type: typeOf(item),
     /** An authored carousel can be split; a single still has nothing inside. */
     splittable: item.kind === 'carousel' && !item.id.includes('--'),
     /** Players cannot become carousel slides, so they cannot be combined. */

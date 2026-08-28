@@ -239,5 +239,20 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss(), curateSaver],
+    server: {
+      watch: {
+        // curation.ts is written by /curate itself, and it sits in that page's
+        // module graph — so every autosave was triggering an HMR reload and
+        // throwing away the board's in-memory state. Nothing should watch a
+        // file the page is the author of. The site picks up changes on its
+        // next request, so a plain refresh there still shows the new order.
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/dist/**',
+          '**/src/data/curation.ts',
+        ],
+      },
+    },
   },
 });
