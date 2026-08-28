@@ -2,7 +2,7 @@
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import WorkTile from './WorkTile.astro';
-import { work, isImageSlide, isDocSlide } from '../data/work';
+import { work, isImageSlide, isDocSlide, coverOf } from '../data/work';
 import { categories, categoryLabel } from '../data/site';
 import { withBase } from '../lib/url';
 
@@ -22,6 +22,8 @@ type Frame = {
   src: string;
   /** Tile-size source, used when a carousel rotates in the grid. */
   thumb?: string;
+  /** Square-ish source for the lightbox thumbnail strip. */
+  chip: string;
   width: number;
   height: number;
   /** 1-based position within the parent item, and how many it has. */
@@ -72,6 +74,8 @@ for (let i = 0; interleaved.length < work.length; i++) {
 for (const item of interleaved) {
   tiles.push({ item, index: frames.length });
 
+  const itemChip = (await sized(coverOf(item), 200)).url;
+
   const shared = {
     itemId: item.id,
     category: item.category,
@@ -89,6 +93,7 @@ for (const item of interleaved) {
           ...shared,
           caption: slide.caption || item.caption,
           kind: 'doc',
+          chip: (await sized(slide.doc[0]!, 200)).url,
           src: pages[0]!.url,
           width: pages[0]!.width,
           height: pages[0]!.height,
@@ -108,6 +113,7 @@ for (const item of interleaved) {
           ...shared,
           caption: slide.caption || item.caption,
           kind: 'model',
+          chip: itemChip,
           src: parts[0]!.src,
           width: 1,
           height: 1,
@@ -123,6 +129,7 @@ for (const item of interleaved) {
         ...shared,
         caption: slide.caption || item.caption,
         kind: 'image',
+        chip: (await sized(slide.src, 200)).url,
         src: full.url,
         thumb: thumb.url,
         width: full.width,
@@ -137,6 +144,7 @@ for (const item of interleaved) {
       ...shared,
       caption: item.caption,
       kind: 'image',
+      chip: itemChip,
       src: full.url,
       width: full.width,
       height: full.height,
@@ -148,6 +156,7 @@ for (const item of interleaved) {
       ...shared,
       caption: item.caption,
       kind: 'video',
+      chip: itemChip,
       src: withBase(item.src),
       width: item.poster.width,
       height: item.poster.height,
@@ -159,6 +168,7 @@ for (const item of interleaved) {
       ...shared,
       caption: item.caption,
       kind: 'embed',
+      chip: itemChip,
       src: item.embed,
       width: item.poster.width,
       height: item.poster.height,

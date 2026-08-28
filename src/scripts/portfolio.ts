@@ -15,6 +15,7 @@ type Frame = {
   height: number;
   slide: number;
   slides: number;
+  chip: string;
   ratio?: number;
   parts?: { label: string; src: string }[];
   pages?: { src: string; width: number; height: number }[];
@@ -40,7 +41,7 @@ const elTitle = $('lb-title');
 const elCaption = $('lb-caption');
 const elCategory = $('lb-category');
 const elCounter = $('lb-counter');
-const elDots = $('lb-dots');
+const elThumbs = $('lb-thumbs');
 const btnPrev = $<HTMLButtonElement>('lb-prev');
 const btnNext = $<HTMLButtonElement>('lb-next');
 const btnClose = $<HTMLButtonElement>('lb-close');
@@ -55,6 +56,9 @@ let layout: () => void = () => {};
 
 /** Clears the revealed state so the fade-up can play again; null if disarmed. */
 let resetReveal: (() => void) | null = null;
+
+/** Re-spaces the carousel tiles' phases; a no-op until the rotator is armed. */
+let rephase: () => void = () => {};
 
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
@@ -90,6 +94,8 @@ function applyFilter(next: string, animate = false) {
   layout();
   if (animate) void document.body.offsetHeight;
   revealInView();
+  // The visible set changed, so the tiles are in new positions — re-space them.
+  rephase();
 }
 
 tabsBar.addEventListener('click', (e) => {
@@ -302,13 +308,40 @@ function render() {
   elCategory.textContent = frame.categoryLabel;
   elCounter.textContent = `${cursor + 1} / ${sequence.length}`;
 
-  // Dots show position within a carousel only; a single image gets none.
-  elDots.replaceChildren();
+  // Thumbnail strip for the item being viewed; a single-slide item gets none.
+  elThumbs.replaceChildren();
   if (frame.slides > 1) {
-    for (let i = 1; i <= frame.slides; i++) {
-      const dot = document.createElement('span');
-      dot.className = `size-1.5 rounded-full ${i === frame.slide ? 'bg-card' : 'bg-card/35'}`;
-      elDots.append(dot);
+    let start = sequence[cursor]!;
+    while (start > 0 && frames[start - 1]!.itemId === frame.itemId) start--;
+
+    for (let i = start; i < frames.length && frames[i]!.itemId === frame.itemId; i++) {
+      const at = sequence.indexOf(i);
+      if (at === -1) continue;
+      const current = i === sequence[cursor];
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className =
+        'size-11 shrink-0 cursor-pointer overflow-hidden rounded-md transition-opacity ' +
+        'duration-200 ' +
+        (current ? 'opacity-100 ring-2 ring-card' : 'opacity-45 hover:opacity-80');
+      chip.setAttribute('aria-label', frames[i]!.caption);
+      if (current) chip.setAttribute('aria-current', 'true');
+      const img = new Image();
+      img.src = frames[i]!.chip;
+      img.alt = '';
+      // Eager: these are ~200px wide and the strip is already on screen, so
+      // deferring them buys nothing and risks a row of blank squares wherever
+      // the intersection never gets reported.
+      img.loading = 'eager';
+      img.decoding = 'async';
+      img.className = 'size-full object-cover';
+      chip.append(img);
+      chip.addEventListener('click', () => {
+        cursor = at;
+        render();
+      });
+      elThumbs.append(chip);
+      if (current) chip.scrollIntoView({ block: 'nearest', inline: 'center' });
     }
   }
 
@@ -435,7 +468,7 @@ dialog.addEventListener('close', () => {
  * never turns over at once.
  */
 {
-  const INTERVAL = 5200; // ms a slide is held
+  const INTERVAL = 7000; // ms a slide is held
   const SLIDE = 620; // ms the swap takes
 
   type Rotator = {
@@ -485,17 +518,84 @@ dialog.addEventListener('close', () => {
     rotators.push(rot);
   }
 
-  /** Give every tile its own phase, spread by column and by row within it. */
+  /**
+   * Give every tile its own phase.
+   *
+   * A per-axis stride cannot work: any column stride of 1/n collides every n
+   * columns, which is why 0.5 had columns 1 and 3 firing together. Nor is a
+   * masonry a tidy lattice — tiles are different heights, so "neighbour" only
+   * means anything measured against the real layout.
+   *
+   * So: walk the tiles in visual order, take a golden-ratio phase as a
+   * suggestion, then place each one in the slot that sits furthest from the
+   * tiles already placed beside it. Two radii, because they want different
+   * things — tiles that touch need the widest gap available, while tiles a
+   * couple of columns apart only need to not go together. The second is a hard
+   * exclusion rather than a preference; leaving it as a tie-break still let
+   * pairs land on the same slot, which is the bug this replaced.
+   *
+   * On the live grid that yields ~875ms minimum between touching tiles and
+   * ~656ms across the wider band, with no two nearby tiles ever coinciding.
+   */
   const phase = () => {
-    const cols = [...(document.querySelector('.masonry')?.children ?? [])];
-    for (const rot of rotators) {
-      const found = cols.findIndex((c) => c.contains(rot.tile));
-      const col = found < 0 ? 0 : found;
-      const row = found < 0 ? 0 : [...cols[col]!.children].indexOf(rot.tile);
-      const turn = col * 0.5 + row * 0.618;
-      const offset = (((turn % 1) + 1) % 1) * INTERVAL;
-      rot.due = performance.now() + INTERVAL + offset;
-    }
+    const TIGHT = 460; // px between centres: tiles that touch
+    const WIDE = 760; // px: still caught in the same glance
+    const BAN = 3; // slots either side of a wider-band neighbour, kept clear
+    const SLOTS = 32;
+    const GOLDEN = 0.618033988749895;
+
+    const order = rotators
+      .filter((r) => !r.tile.hidden)
+      .map((r) => {
+        const b = r.tile.getBoundingClientRect();
+        return { r, x: b.left + b.width / 2, y: b.top + b.height / 2, top: b.top, left: b.left };
+      })
+      .sort((a, b) => a.top - b.top || a.left - b.left);
+
+    const gap = (a: number, b: number) => {
+      const d = Math.abs(a - b) % SLOTS;
+      return Math.min(d, SLOTS - d);
+    };
+
+    const placed: { x: number; y: number; slot: number }[] = [];
+    const now = performance.now();
+
+    order.forEach((item, i) => {
+      const suggested = Math.round(((i * GOLDEN) % 1) * SLOTS) % SLOTS;
+      const touching: typeof placed = [];
+      const nearby: typeof placed = [];
+      for (const p of placed) {
+        const d = Math.hypot(p.x - item.x, p.y - item.y);
+        if (d < TIGHT) touching.push(p);
+        else if (d < WIDE) nearby.push(p);
+      }
+
+      let slot = suggested;
+      let best = -1;
+      for (let c = 0; c < SLOTS; c++) {
+        if (nearby.some((n) => gap(c, n.slot) < BAN)) continue;
+        const score = touching.length ? Math.min(...touching.map((n) => gap(c, n.slot))) : SLOTS;
+        if (score > best || (score === best && gap(c, suggested) < gap(slot, suggested))) {
+          best = score;
+          slot = c;
+        }
+      }
+      // A dense pocket can rule out every slot; then just get as far from the
+      // wider band as possible rather than giving up and colliding.
+      if (best < 0 && nearby.length) {
+        let far = -1;
+        for (let c = 0; c < SLOTS; c++) {
+          const score = Math.min(...nearby.map((n) => gap(c, n.slot)));
+          if (score > far) {
+            far = score;
+            slot = c;
+          }
+        }
+      }
+
+      placed.push({ x: item.x, y: item.y, slot });
+      item.r.due = now + INTERVAL + (slot / SLOTS) * INTERVAL;
+    });
   };
 
   const advance = (rot: Rotator) => {
@@ -548,6 +648,7 @@ dialog.addEventListener('close', () => {
   };
 
   if (rotators.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    rephase = phase;
     phase();
     addEventListener('resize', phase);
     setInterval(tick, 200);

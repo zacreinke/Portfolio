@@ -62,7 +62,13 @@
     <div class="shrink-0 px-4 pt-4 pb-6 text-center sm:px-6">
       <p id="lb-title" class="font-heading text-[17px] font-medium tracking-[-0.015em] text-card"></p>
       <p id="lb-caption" class="mt-1 text-[13px] text-card/75"></p>
-      <div id="lb-dots" class="mt-3 flex items-center justify-center gap-1.5"></div>
+      {/* Square previews of the item's slides; scrolls when there are many. */}
+      <div
+        id="lb-thumbs"
+        class="no-scrollbar mx-auto mt-3 flex max-w-full items-center gap-2 overflow-x-auto px-4"
+        style="justify-content: safe center"
+      >
+      </div>
     </div>
   </div>
 </dialog>
