@@ -153,22 +153,16 @@
     margin-bottom: 16px;
   }
 
-  /* JS-driven mode: real columns, exact count, left-to-right order. */
+  /* JS-driven mode: tiles are placed by hand at an exact x and y, which is what
+     lets a featured tile span two columns. The container carries no layout of
+     its own beyond the height the script measures for it. */
   .masonry--js {
+    position: relative;
+    display: block;
     column-count: initial;
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
   }
   .masonry--js > * {
     margin-bottom: 0;
-  }
-  .masonry-col {
-    display: flex;
-    min-width: 0;
-    flex: 1 1 0;
-    flex-direction: column;
-    gap: 16px;
   }
 
   /* Carousel fan — two more slides ease out from behind the cover on hover,

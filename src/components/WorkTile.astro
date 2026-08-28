@@ -1,7 +1,8 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import { coverOf, isDocSlide, isImageSlide, type WorkItem } from '../data/work';
+import { coverOf, isDocSlide, isImageSlide, nameOf, type WorkItem } from '../data/work';
+import { transparent } from '../data/transparent';
 
 interface Props {
   item: WorkItem;
@@ -19,22 +20,51 @@ const isPlayable = item.kind === 'video' || item.kind === 'embed';
 
 /**
  * What the tile is, said on the tile. A 3D model, a scrollable document and a
- * photo set were all showing the same bare number, so the grid gave no clue
- * what any tile would open into — a large part of why the mix read as messy.
- * The medium wins over the count: knowing a tile is a model matters more than
- * knowing it holds two frames.
+ * photo set were all showing a bare number, so the grid gave no clue what a
+ * tile would open into.
+ *
+ * A medium only earns the label when the whole set is that medium — a carousel
+ * of stills that happens to end on a PDF is not a document, and calling it
+ * "DOC" describes one slide out of ten.
  */
 const marker = (() => {
-  if (item.kind === 'carousel') {
-    if (item.slides.some((s) => 'model' in s)) return '3D';
-    if (item.slides.some(isDocSlide)) return 'DOC';
-  }
+  // 3D pieces are a render plus the model, so they are mixed by construction —
+  // but the category is never wrong about them, and a bare count tells you less
+  // than nothing about a tile you can spin.
+  if (item.category === '3d') return '3D';
+  if (item.kind === 'carousel' && item.slides.every(isDocSlide)) return 'DOC';
   if (item.kind === 'embed' && item.embed.includes('soundcloud')) return 'Audio';
   if (slideCount > 1) return String(slideCount);
   return null;
 })();
 /** Counts stay in the fixed circle; words need a pill that can grow. */
 const markerIsCount = marker !== null && /^\d+$/.test(marker);
+
+/**
+ * Tiles take their cover's shape, but an unbounded shape wrecks the grid: a
+ * 0.41 display ad becomes a tower and a 4.27 lockup becomes a letter slot.
+ * Clamp the frame, and where the clamp bites, letterbox the artwork inside it
+ * rather than cropping — a beheaded guitar is worse than empty margin.
+ */
+const MIN_RATIO = 0.78; // ~4:5, the tallest a tile may stand
+const MAX_RATIO = 2.0; // 2:1, the widest it may lie
+const trueRatio = cover.width / cover.height;
+const ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, trueRatio));
+const clamped = Math.abs(ratio - trueRatio) > 0.001;
+
+/**
+ * A mark delivered on transparency has no ground of its own. The tile is
+ * already white, so it only needs to stop bleeding into the edges: contain it
+ * and give it margin. Checked across every slide, since any of them can rotate
+ * into view and they all share the cover's treatment.
+ */
+const hasTransparent =
+  transparent.has(nameOf(cover) ?? '') ||
+  (item.kind === 'carousel' &&
+    item.slides.some((s) => isImageSlide(s) && transparent.has(nameOf(s.src) ?? '')));
+
+/** Letterbox rather than crop whenever cropping would lose part of the work. */
+const contain = clamped || hasTransparent;
 
 /** Two more slides peek out from behind the cover on hover, like a fanned deck. */
 const fan =
@@ -48,10 +78,12 @@ const passthrough = cover.format === 'gif' || cover.format === 'svg';
 
 // Absolutely positioned inside a ratio-locked box: a rotating carousel must not
 // resize its frame, or every swap would reflow the whole masonry column.
+// Padding insets the painted image because object-fit resolves against the
+// content box, so a slide transform still travels the full tile width.
 const mediaClass =
-  'absolute inset-0 size-full object-cover transition-transform duration-500 ' +
-  'ease-out group-hover:scale-[1.03]';
-const ratio = (cover.width / cover.height).toFixed(4);
+  'absolute inset-0 size-full transition-transform duration-500 ease-out ' +
+  'group-hover:scale-[1.03] ' +
+  (contain ? 'object-contain p-[7%] sm:p-[6%]' : 'object-cover');
 ---
 
 <figure
@@ -59,7 +91,8 @@ const ratio = (cover.width / cover.height).toFixed(4);
   data-tile
   data-index={index}
   data-category={item.category}
-  data-ratio={(cover.width / cover.height).toFixed(4)}
+  data-ratio={ratio.toFixed(4)}
+  data-span={item.wide ? 2 : 1}
 >
   {
     fan.map((src, i) => (
@@ -81,7 +114,7 @@ const ratio = (cover.width / cover.height).toFixed(4);
     aria-label={`Open ${item.title}`}
     class="relative block w-full cursor-pointer overflow-hidden rounded-tile border border-line bg-card"
   >
-    <span class="relative block w-full" style={`aspect-ratio:${ratio}`} data-media>
+    <span class="relative block w-full" style={`aspect-ratio:${ratio.toFixed(4)}`} data-media>
     {
       passthrough ? (
         <img

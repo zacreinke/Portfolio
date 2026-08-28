@@ -13,7 +13,9 @@ import Loader from '../components/Loader.astro';
   <Loader />
   <div class="shell">
     <Nav />
-    <main class="flex-1">
+    {/* The nav is fixed from lg up, so the flow needs its height back:
+        24 top + 64 portrait + 16 bottom. */}
+    <main class="flex-1 lg:pt-[104px]">
       <Hero />
       <FilterTabs />
       <MasonryGrid />

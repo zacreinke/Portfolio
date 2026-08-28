@@ -2,24 +2,39 @@
 import { Image } from 'astro:assets';
 import zac from '../assets/zac.webp';
 import { site } from '../data/site';
+
+/**
+ * Pinned to the viewport on desktop, where there is height to spare, and left
+ * in the flow on phones and tablets, where a fixed bar would eat a third of a
+ * landscape screen.
+ *
+ * The portrait and the button track the frame's corner radius: the frame eases
+ * 48 -> 32 -> 24px as the viewport narrows, and a 64px portrait beside a 24px
+ * corner reads as oversized. Sits under the loader (z-50) so the intro still
+ * covers it, and under the frame (z-60) so the black mask trims its edges.
+ */
 ---
 
-<header>
+<header
+  class="inset-x-0 top-0 z-40 bg-page lg:fixed"
+>
   <nav
-    class="mx-auto flex max-w-site items-center justify-between gap-4 px-5 py-5 sm:px-8"
+    class="mx-auto flex max-w-[1728px] items-center justify-between gap-4 pt-6 pr-6 pb-4 pl-6"
     aria-label="Primary"
   >
-    <a href="#work" class="flex items-center gap-3">
+    <a href="#work" class="flex items-center gap-3 sm:gap-4">
       <Image
         src={zac}
         alt={site.name}
-        width={80}
-        height={80}
+        width={128}
+        height={128}
         densities={[1, 2]}
         loading="eager"
-        class="size-10 rounded-full object-cover"
+        class="size-10 rounded-full object-cover sm:size-[52px] lg:size-16"
       />
-      <span class="font-heading text-[24px] font-medium tracking-[-0.025em] whitespace-nowrap">
+      <span
+        class="font-heading font-medium tracking-[-0.025em] whitespace-nowrap text-[22px] sm:text-[26px] lg:text-[32px]"
+      >
         {site.name}
       </span>
     </a>
@@ -28,7 +43,7 @@ import { site } from '../data/site';
       href={`mailto:${site.email}?subject=Let%27s%20work%20together`}
       target="_blank"
       rel="noopener noreferrer"
-      class="label-caps rounded-full bg-ink px-5 py-2.5 text-card whitespace-nowrap transition-opacity duration-200 hover:opacity-80"
+      class="label-caps inline-flex h-10 shrink-0 items-center rounded-full bg-ink px-5 text-card whitespace-nowrap transition-opacity duration-200 hover:opacity-80 sm:h-[52px] sm:px-6 lg:h-16 lg:px-8"
     >
       Hit Me Up!
     </a>

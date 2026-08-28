@@ -403,47 +403,66 @@ dialog.addEventListener('close', () => {
 
 // CSS multi-column balances by height, so a trailing column can come up empty
 // (nine similar tiles across four columns render 3/3/3/0). Place tiles by hand
-// instead: fixed column count, and each tile goes to the shortest column.
-// Heights come from each cover's aspect ratio, so this never waits on images.
+// instead.
+//
+// Tiles are positioned absolutely rather than dropped into flex columns. A flex
+// column can only hold whole tiles, so a featured tile could never straddle two
+// of them; addressing x and y directly makes a span just a wider box. Heights
+// are measured once per pass rather than derived from the aspect ratio, so a
+// border or a letterboxed frame can't drift the stack out of alignment.
 {
   const grid = document.querySelector<HTMLElement>('.masonry');
   if (grid) {
+    const GAP = 16;
     // Never drop to one column — two keeps the grid reading as a grid on phones.
     const columnsFor = (w: number) => (w >= 1280 ? 4 : w >= 1024 ? 3 : 2);
-    let columnCount = 0;
 
     layout = () => {
-      const wanted = columnsFor(innerWidth);
+      const cols = columnsFor(innerWidth);
       const visible = tiles.filter((t) => !t.hidden);
+      const width = grid.clientWidth;
+      if (!width) return;
 
-      if (wanted !== columnCount) {
-        columnCount = wanted;
-        grid.replaceChildren();
-        for (let i = 0; i < wanted; i++) {
-          const col = document.createElement('div');
-          col.className = 'masonry-col';
-          grid.append(col);
+      const colW = (width - GAP * (cols - 1)) / cols;
+
+      // Widths first, then every height in one read, then placement. Interleaving
+      // writes and reads would force a synchronous layout per tile.
+      const spans = visible.map((t) => Math.min(Number(t.dataset.span) || 1, cols));
+      visible.forEach((tile, i) => {
+        tile.style.position = 'absolute';
+        tile.style.width = `${colW * spans[i]! + GAP * (spans[i]! - 1)}px`;
+      });
+      const sizes = visible.map((t) => t.offsetHeight);
+
+      const heights = new Array<number>(cols).fill(0);
+      visible.forEach((tile, i) => {
+        const span = spans[i]!;
+        // Among the runs of adjacent columns this tile could occupy, take the one
+        // whose deepest column is highest up; ties go left so reading order holds.
+        let start = 0;
+        let top = Infinity;
+        for (let c = 0; c + span <= cols; c++) {
+          let run = 0;
+          for (let k = c; k < c + span; k++) run = Math.max(run, heights[k]!);
+          if (run < top - 0.5) {
+            top = run;
+            start = c;
+          }
         }
-      }
+        tile.style.left = `${start * (colW + GAP)}px`;
+        tile.style.top = `${top}px`;
+        const bottom = top + sizes[i]! + GAP;
+        for (let k = start; k < start + span; k++) heights[k] = bottom;
+      });
 
-      const cols = [...grid.children] as HTMLElement[];
-      for (const col of cols) col.replaceChildren();
-
-      // Relative heights only — the unit cancels out, since every column is
-      // the same width. A tile is 1/ratio tall plus a constant for the gap.
-      const heights = new Array(cols.length).fill(0);
-      for (const tile of visible) {
-        let shortest = 0;
-        for (let i = 1; i < heights.length; i++) {
-          if (heights[i] < heights[shortest]) shortest = i;
-        }
-        cols[shortest]!.append(tile);
-        heights[shortest] += 1 / (Number(tile.dataset.ratio) || 1) + 0.06;
-      }
+      // The container is out of flow now, so it has to be told how tall it is.
+      grid.style.height = `${Math.max(0, ...heights) - GAP}px`;
     };
 
     grid.classList.add('masonry--js');
     layout();
+    // Fonts and late images can change a tile's height after the first pass.
+    addEventListener('load', () => layout());
     addEventListener('resize', () => {
       layout();
       revealInView();
