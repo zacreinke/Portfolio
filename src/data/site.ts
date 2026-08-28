@@ -8,6 +8,7 @@ export const site = {
 } as const;
 
 export type Category =
+  | 'branding'
   | 'graphic-design'
   | 'illustration'
   | 'web-ui'
@@ -22,6 +23,7 @@ export type Category =
  * under src/assets/work/.
  */
 export const categories: { id: Category; label: string }[] = [
+  { id: 'branding', label: 'Branding & Identity' },
   { id: 'graphic-design', label: 'Graphic Design' },
   { id: 'illustration', label: 'Illustration' },
   { id: 'web-ui', label: 'Web/UI Design' },

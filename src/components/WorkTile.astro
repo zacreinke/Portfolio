@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import { coverOf, isImageSlide, type WorkItem } from '../data/work';
+import { coverOf, isDocSlide, isImageSlide, type WorkItem } from '../data/work';
 
 interface Props {
   item: WorkItem;
@@ -16,6 +16,25 @@ const cover: ImageMetadata = coverOf(item);
 
 const slideCount = item.kind === 'carousel' ? item.slides.length : 1;
 const isPlayable = item.kind === 'video' || item.kind === 'embed';
+
+/**
+ * What the tile is, said on the tile. A 3D model, a scrollable document and a
+ * photo set were all showing the same bare number, so the grid gave no clue
+ * what any tile would open into — a large part of why the mix read as messy.
+ * The medium wins over the count: knowing a tile is a model matters more than
+ * knowing it holds two frames.
+ */
+const marker = (() => {
+  if (item.kind === 'carousel') {
+    if (item.slides.some((s) => 'model' in s)) return '3D';
+    if (item.slides.some(isDocSlide)) return 'DOC';
+  }
+  if (item.kind === 'embed' && item.embed.includes('soundcloud')) return 'Audio';
+  if (slideCount > 1) return String(slideCount);
+  return null;
+})();
+/** Counts stay in the fixed circle; words need a pill that can grow. */
+const markerIsCount = marker !== null && /^\d+$/.test(marker);
 
 /** Two more slides peek out from behind the cover on hover, like a fanned deck. */
 const fan =
@@ -101,11 +120,19 @@ const ratio = (cover.width / cover.height).toFixed(4);
     }
   </button>
 
-  {/* Count badge — a fixed circle, so 1 and 12 render at the same size. */}
+  {/* A count keeps the fixed circle, so 1 and 12 render at the same size;
+      a medium label gets a pill of the same height that grows with the word. */}
   {
-    slideCount > 1 && (
-      <span class="pointer-events-none absolute top-2.5 right-2.5 z-10 flex size-7 items-center justify-center rounded-full bg-ink/30 text-[11px] font-semibold text-card tabular-nums backdrop-blur-sm">
-        {slideCount}
+    marker && (
+      <span
+        class={
+          'pointer-events-none absolute top-2.5 right-2.5 z-10 flex h-7 items-center justify-center rounded-full bg-ink/30 text-card backdrop-blur-sm ' +
+          (markerIsCount
+            ? 'w-7 text-[11px] font-semibold tabular-nums'
+            : 'px-2.5 text-[10px] font-semibold tracking-[0.08em] uppercase')
+        }
+      >
+        {marker}
       </span>
     )
   }

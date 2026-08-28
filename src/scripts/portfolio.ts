@@ -57,9 +57,6 @@ let layout: () => void = () => {};
 /** Clears the revealed state so the fade-up can play again; null if disarmed. */
 let resetReveal: (() => void) | null = null;
 
-/** Re-spaces the carousel tiles' phases; a no-op until the rotator is armed. */
-let rephase: () => void = () => {};
-
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
 let sequence: number[] = frames.map((_, i) => i);
@@ -94,8 +91,6 @@ function applyFilter(next: string, animate = false) {
   layout();
   if (animate) void document.body.offsetHeight;
   revealInView();
-  // The visible set changed, so the tiles are in new positions — re-space them.
-  rephase();
 }
 
 tabsBar.addEventListener('click', (e) => {
@@ -462,13 +457,18 @@ dialog.addEventListener('close', () => {
  * Carousel tiles cycle their stills in the grid, sliding right to left inside a
  * frame that never changes size.
  *
- * One shared ticker rather than a timer per tile: the wait between changes is
- * identical everywhere, and only the phase differs. Neighbours are pushed well
- * apart — half an interval across columns, ~0.6 down a column — so a screenful
- * never turns over at once.
+ * Only one tile changes at a time. An earlier version gave every tile its own
+ * phase and spaced those phases as widely as possible, which is exactly wrong:
+ * perfectly spread phases guarantee that something is always moving, so the
+ * grid never rests. Here a single scheduler grants one change every GAP ms to
+ * the tile that has waited longest, preferring one away from the last change.
+ * The grid is still, one tile turns over, the grid is still again.
  */
 {
-  const INTERVAL = 7000; // ms a slide is held
+  const GAP = 2800; // ms between changes anywhere in the grid
+  const MIN_HOLD = 14000; // ms a tile holds a slide before it may change again
+  const MAX_ACTIVE = 2; // hard ceiling on tiles mid-swap at once
+  const APART = 520; // px: prefer the next change away from the last one
   const SLIDE = 620; // ms the swap takes
 
   type Rotator = {
@@ -477,7 +477,7 @@ dialog.addEventListener('close', () => {
     slots: [HTMLImageElement, HTMLImageElement];
     showing: 0 | 1;
     at: number;
-    due: number;
+    last: number; // performance.now() of its last change
     busy: boolean;
     paused: boolean;
   };
@@ -510,7 +510,7 @@ dialog.addEventListener('close', () => {
 
     const rot: Rotator = {
       tile, frames: own, slots: [first as HTMLImageElement, second],
-      showing: 0, at: 0, due: 0, busy: false, paused: false,
+      showing: 0, at: 0, last: 0, busy: false, paused: false,
     };
     // Hovering brings up the fan; rotating underneath it reads as noise.
     tile.addEventListener('pointerenter', () => { rot.paused = true; });
@@ -518,84 +518,10 @@ dialog.addEventListener('close', () => {
     rotators.push(rot);
   }
 
-  /**
-   * Give every tile its own phase.
-   *
-   * A per-axis stride cannot work: any column stride of 1/n collides every n
-   * columns, which is why 0.5 had columns 1 and 3 firing together. Nor is a
-   * masonry a tidy lattice — tiles are different heights, so "neighbour" only
-   * means anything measured against the real layout.
-   *
-   * So: walk the tiles in visual order, take a golden-ratio phase as a
-   * suggestion, then place each one in the slot that sits furthest from the
-   * tiles already placed beside it. Two radii, because they want different
-   * things — tiles that touch need the widest gap available, while tiles a
-   * couple of columns apart only need to not go together. The second is a hard
-   * exclusion rather than a preference; leaving it as a tie-break still let
-   * pairs land on the same slot, which is the bug this replaced.
-   *
-   * On the live grid that yields ~875ms minimum between touching tiles and
-   * ~656ms across the wider band, with no two nearby tiles ever coinciding.
-   */
-  const phase = () => {
-    const TIGHT = 460; // px between centres: tiles that touch
-    const WIDE = 760; // px: still caught in the same glance
-    const BAN = 3; // slots either side of a wider-band neighbour, kept clear
-    const SLOTS = 32;
-    const GOLDEN = 0.618033988749895;
-
-    const order = rotators
-      .filter((r) => !r.tile.hidden)
-      .map((r) => {
-        const b = r.tile.getBoundingClientRect();
-        return { r, x: b.left + b.width / 2, y: b.top + b.height / 2, top: b.top, left: b.left };
-      })
-      .sort((a, b) => a.top - b.top || a.left - b.left);
-
-    const gap = (a: number, b: number) => {
-      const d = Math.abs(a - b) % SLOTS;
-      return Math.min(d, SLOTS - d);
-    };
-
-    const placed: { x: number; y: number; slot: number }[] = [];
-    const now = performance.now();
-
-    order.forEach((item, i) => {
-      const suggested = Math.round(((i * GOLDEN) % 1) * SLOTS) % SLOTS;
-      const touching: typeof placed = [];
-      const nearby: typeof placed = [];
-      for (const p of placed) {
-        const d = Math.hypot(p.x - item.x, p.y - item.y);
-        if (d < TIGHT) touching.push(p);
-        else if (d < WIDE) nearby.push(p);
-      }
-
-      let slot = suggested;
-      let best = -1;
-      for (let c = 0; c < SLOTS; c++) {
-        if (nearby.some((n) => gap(c, n.slot) < BAN)) continue;
-        const score = touching.length ? Math.min(...touching.map((n) => gap(c, n.slot))) : SLOTS;
-        if (score > best || (score === best && gap(c, suggested) < gap(slot, suggested))) {
-          best = score;
-          slot = c;
-        }
-      }
-      // A dense pocket can rule out every slot; then just get as far from the
-      // wider band as possible rather than giving up and colliding.
-      if (best < 0 && nearby.length) {
-        let far = -1;
-        for (let c = 0; c < SLOTS; c++) {
-          const score = Math.min(...nearby.map((n) => gap(c, n.slot)));
-          if (score > far) {
-            far = score;
-            slot = c;
-          }
-        }
-      }
-
-      placed.push({ x: item.x, y: item.y, slot });
-      item.r.due = now + INTERVAL + (slot / SLOTS) * INTERVAL;
-    });
+  /** Centre of a tile in viewport coordinates. */
+  const centreOf = (rot: Rotator) => {
+    const b = rot.tile.getBoundingClientRect();
+    return { x: b.left + b.width / 2, y: b.top + b.height / 2, top: b.top, bottom: b.bottom };
   };
 
   const advance = (rot: Rotator) => {
@@ -633,24 +559,52 @@ dialog.addEventListener('close', () => {
     setTimeout(once, 400);
   };
 
+  let nextChange = 0;
+  let lastCentre: { x: number; y: number } | null = null;
+
   const tick = () => {
     const now = performance.now();
+    if (now < nextChange) return;
+    if (rotators.reduce((n, r) => n + (r.busy ? 1 : 0), 0) >= MAX_ACTIVE) return;
+
+    // A tile is a candidate only if it is on screen, settled, and not hovered —
+    // the fan is up on hover and rotating underneath it reads as noise.
+    const ready: { rot: Rotator; c: ReturnType<typeof centreOf> }[] = [];
     for (const rot of rotators) {
-      if (rot.busy || rot.paused || now < rot.due) continue;
-      const r = rot.tile.getBoundingClientRect();
-      if (rot.tile.hidden || r.bottom < 0 || r.top > innerHeight) {
-        rot.due = now + INTERVAL; // off screen: hold, don't burn through slides
-        continue;
-      }
-      advance(rot);
-      rot.due = now + INTERVAL;
+      if (rot.busy || rot.paused || rot.tile.hidden) continue;
+      if (now - rot.last < MIN_HOLD) continue;
+      const c = centreOf(rot);
+      if (c.bottom < 0 || c.top > innerHeight) continue;
+      ready.push({ rot, c });
     }
+    if (!ready.length) {
+      nextChange = now + GAP;
+      return;
+    }
+
+    // Longest-waiting first, then step past any that sit on top of the last
+    // change so two consecutive changes are not in the same corner.
+    ready.sort((a, b) => a.rot.last - b.rot.last);
+    let pick = ready[0]!;
+    if (lastCentre) {
+      const far = ready.find(
+        (r) => Math.hypot(r.c.x - lastCentre!.x, r.c.y - lastCentre!.y) > APART,
+      );
+      if (far) pick = far;
+    }
+
+    advance(pick.rot);
+    pick.rot.last = now;
+    lastCentre = { x: pick.c.x, y: pick.c.y };
+    nextChange = now + GAP;
   };
 
   if (rotators.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    rephase = phase;
-    phase();
-    addEventListener('resize', phase);
+    const start = performance.now();
+    // Spread the initial waits a little so the first few changes do not simply
+    // walk the grid in DOM order.
+    rotators.forEach((r, i) => { r.last = start - MIN_HOLD + ((i * 2129) % 900); });
+    nextChange = start + 3000; // let the page settle before anything moves
     setInterval(tick, 200);
   }
 }

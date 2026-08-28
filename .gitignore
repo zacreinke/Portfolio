@@ -6,3 +6,4 @@ dist/
 build/
 .astro/
 source-pdfs/
+source-archive/
