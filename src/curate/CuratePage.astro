@@ -120,11 +120,11 @@ const state = { highlights, featured, hidden, merges, moves, splits, cards, colu
         class="w-[220px] rounded-full border border-line bg-card px-4 py-2 text-[13px] outline-none focus:border-ink"
       />
       <span class="mr-auto text-[12px] opacity-55">
-        Drag a card to a column to move it · drop one <b>onto</b> another to combine ·
-        <b>⤢</b> opens a combined card
+        Drag to a column to move · drop <b>onto</b> a card to combine · <b>⌘-click</b> to
+        pick several · <b>⤢</b> opens a set
       </span>
-      <span id="dirty" hidden class="label-caps rounded-full bg-ink/10 px-3 py-1 text-[10px]">
-        unsaved
+      <span id="dirty" class="label-caps rounded-full px-3 py-1 text-[10px] opacity-55">
+        saved
       </span>
       <button
         type="button"
@@ -135,13 +135,28 @@ const state = { highlights, featured, hidden, merges, moves, splits, cards, colu
       </button>
       <button
         type="button"
-        id="save"
-        class="label-caps cursor-pointer rounded-full bg-ink px-5 py-2 text-card transition-opacity hover:opacity-80"
+        id="publish"
+        class="label-caps cursor-pointer rounded-full bg-ink px-5 py-2 text-card transition-opacity hover:opacity-80 disabled:opacity-40"
       >
-        Save
+        Publish
       </button>
       <span id="status" class="label-caps opacity-0 transition-opacity"></span>
     </header>
+
+    <div
+      id="restored"
+      hidden
+      class="flex shrink-0 items-center gap-3 border-b border-line bg-pill px-5 py-2 text-[12px]"
+    >
+      <span id="restored-msg"></span>
+      <button
+        type="button"
+        id="discard"
+        class="label-caps cursor-pointer rounded-full border border-line bg-card px-3 py-1"
+      >
+        Discard
+      </button>
+    </div>
 
     <div id="board" class="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3"></div>
 
@@ -173,14 +188,22 @@ const state = { highlights, featured, hidden, merges, moves, splits, cards, colu
         >
         </div>
         <p class="mx-auto mt-3 max-w-[1100px] text-[12px] text-card/55">
-          Drag to reorder inside the box. Drag a piece out of the box to put it back on the
-          board as its own card.
+          Drag to reorder inside the box, or drag a piece down to take it out of the set or
+          archive it.
         </p>
-        <div
-          id="i-out"
-          class="mx-auto mt-3 flex min-h-[92px] max-w-[1100px] flex-wrap gap-3 rounded-[18px] border-2 border-dashed border-card/20 p-4"
-        >
-          <span class="self-center text-[12px] text-card/45">drop here to take it out</span>
+        <div class="mx-auto mt-3 flex max-w-[1100px] gap-3">
+          <div
+            id="i-out"
+            class="flex min-h-[92px] flex-1 flex-wrap items-center justify-center gap-3 rounded-[18px] border-2 border-dashed border-card/20 p-4"
+          >
+            <span class="text-[12px] text-card/45">drop here to take it out of the set</span>
+          </div>
+          <div
+            id="i-archive"
+            class="flex min-h-[92px] flex-1 flex-wrap items-center justify-center gap-3 rounded-[18px] border-2 border-dashed border-card/20 p-4"
+          >
+            <span class="text-[12px] text-card/45">drop here to archive it</span>
+          </div>
         </div>
       </div>
     </div>

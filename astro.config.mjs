@@ -1,11 +1,35 @@
 // @ts-check
+import { execFile } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
 const CURATION = fileURLToPath(new URL('./src/data/curation.ts', import.meta.url));
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
+const run = promisify(execFile);
+
+/**
+ * Commit curation.ts and push, which is what starts the Pages deploy. Only
+ * ever these three git commands with fixed arguments — nothing from the page
+ * reaches a shell.
+ */
+async function publishCuration() {
+  const { stdout: status } = await run('git', ['status', '--porcelain', 'src/data/curation.ts'], {
+    cwd: ROOT,
+  });
+  if (!status.trim()) return { ok: true, pushed: false };
+  await run('git', ['add', 'src/data/curation.ts'], { cwd: ROOT });
+  await run(
+    'git',
+    ['commit', '-m', 'Update curation from the board\n\nWritten by /curate.'],
+    { cwd: ROOT },
+  );
+  const { stdout } = await run('git', ['push', 'origin', 'HEAD'], { cwd: ROOT });
+  return { ok: true, pushed: true, detail: stdout.trim().slice(0, 400) };
+}
 
 /**
  * Serialise the picker's selection back into src/data/curation.ts.
@@ -120,6 +144,19 @@ const curateSaver = {
   apply: 'serve',
   /** @param {import('vite').ViteDevServer} server */
   configureServer(server) {
+    server.middlewares.use('/__curate/publish', (/** @type {any} */ req, /** @type {any} */ res, /** @type {any} */ next) => {
+      if (req.method !== 'POST') return next();
+      publishCuration()
+        .then((out) => {
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify(out));
+        })
+        .catch((err) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ ok: false, error: String(err.stderr || err.message || err) }));
+        });
+    });
+
     server.middlewares.use('/__curate', (/** @type {any} */ req, /** @type {any} */ res, /** @type {any} */ next) => {
       if (req.method !== 'POST') return next();
       let body = '';

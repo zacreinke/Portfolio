@@ -61,6 +61,9 @@ for (const id of state.hidden) column.set(id, ARCHIVE);
 
 /** Order within each column, holding card ids and combo ids alike. */
 const order = new Map<string, string[]>();
+
+/** Cards picked with cmd/ctrl-click, so several can be dragged at once. */
+const picked = new Set<string>();
 let highlights: string[] = [...state.highlights];
 const splits = new Set(state.splits);
 
@@ -127,7 +130,66 @@ function commit(fn: () => void) {
   past.push(snapshot());
   if (past.length > 60) past.shift();
   fn();
+  keepDraft();
+  autosave();
   render();
+}
+
+/**
+ * Writing curation.ts is a local file write, not a deploy, so there is no
+ * reason to make it a decision. Every change lands on disk a moment later, and
+ * the localStorage draft covers the gap in between.
+ */
+let saveTimer: ReturnType<typeof setTimeout> | undefined;
+function autosave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => void save(), 700);
+}
+
+/* ------------------------------ crash safety ------------------------------ */
+
+/**
+ * The board holds its working state in memory, which a reload throws away —
+ * and a reload happens on every dev-server restart, every HMR update and every
+ * stray refresh. Losing an hour of dragging to that is not acceptable, so the
+ * state is mirrored to localStorage after every change and offered back on
+ * load. Saving to curation.ts clears it.
+ */
+const DRAFT = 'curate-draft-v1';
+const keepDraft = () => {
+  try {
+    localStorage.setItem(DRAFT, JSON.stringify({ at: Date.now(), state: snapshot() }));
+  } catch {
+    /* storage full or blocked — the board still works, it just cannot recover */
+  }
+};
+const dropDraft = () => {
+  try {
+    localStorage.removeItem(DRAFT);
+  } catch {
+    /* nothing to do */
+  }
+};
+
+function offerDraft() {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(DRAFT);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+  try {
+    const { at, state: saved } = JSON.parse(raw);
+    if (saved === snapshot()) return dropDraft(); // nothing newer than the file
+    restore(saved);
+    const when = new Date(at).toLocaleTimeString();
+    $('restored-msg').textContent =
+      `Restored unsaved changes from ${when}. Save to write them to curation.ts.`;
+    $('restored').hidden = false;
+  } catch {
+    dropDraft();
+  }
 }
 
 /* -------------------------------- rendering -------------------------------- */
@@ -153,17 +215,13 @@ function cardEl(id: string, col: string): HTMLElement {
   el.dataset.col = col;
 
   const n = countOf(id);
+  const openable = !!combo || !!base.get(id)?.splittable;
   el.innerHTML = `
     <div class="relative overflow-hidden rounded-[8px] bg-page">
       <span class="block w-full" style="aspect-ratio:1.3">
         <img src="${thumbOf(id)}" alt="" loading="lazy"
              class="absolute inset-0 size-full object-cover" />
       </span>
-      ${
-        n > 1
-          ? `<span class="absolute right-1.5 bottom-1.5 rounded-full bg-ink/60 px-1.5 py-0.5 text-[10px] font-semibold text-card tabular-nums backdrop-blur-sm">${n}</span>`
-          : ''
-      }
       ${
         combo
           ? `<span class="absolute top-1.5 left-1.5 rounded-full bg-ink px-1.5 py-0.5 text-[9px] font-semibold tracking-[0.06em] text-card uppercase">set</span>`
@@ -172,19 +230,30 @@ function cardEl(id: string, col: string): HTMLElement {
     </div>
     <p class="mt-1 line-clamp-2 px-0.5 text-[11px] leading-tight opacity-75">${titleOf(id)}</p>`;
 
-  if (combo || base.get(id)?.splittable) {
+  if (n > 1) {
+    // The count is the affordance: it says how many are inside, and turns into
+    // the way in when you reach for it.
+    const badge = document.createElement('span');
+    badge.className =
+      'pointer-events-none absolute right-3 bottom-9 rounded-full bg-ink/60 px-1.5 py-0.5 text-[10px] font-semibold text-card tabular-nums backdrop-blur-sm' +
+      (openable ? ' group-hover:hidden' : '');
+    badge.textContent = String(n);
+    el.append(badge);
+  }
+  if (openable) {
     const expand = document.createElement('button');
     expand.type = 'button';
     expand.title = 'Open';
     expand.textContent = '⤢';
     expand.className =
-      'absolute top-2.5 right-2.5 hidden size-6 items-center justify-center rounded-full bg-ink/55 text-[11px] text-card backdrop-blur-sm group-hover:flex';
+      'absolute right-2.5 bottom-8 hidden size-7 items-center justify-center rounded-full bg-ink text-[12px] text-card group-hover:flex';
     expand.addEventListener('click', (e) => {
       e.stopPropagation();
       openInspect(id);
     });
     el.append(expand);
   }
+  if (picked.has(id)) el.classList.add('ring-2', 'ring-ink', 'ring-offset-1');
   return el;
 }
 
@@ -196,6 +265,14 @@ function render() {
     const combo = combos.find((c) => c.id === id);
     return combo ? combo.members.some((m) => titleOf(m).toLowerCase().includes(q)) : false;
   };
+
+  // replaceChildren throws away scroll position, and losing your place after
+  // every drop makes the board unusable at 362 cards.
+  const scrolls = new Map<string, number>();
+  for (const b of board.querySelectorAll<HTMLElement>('.col-body')) {
+    scrolls.set(b.dataset.col!, b.scrollTop);
+  }
+  const across = board.scrollLeft;
 
   board.replaceChildren(
     ...COLUMNS().map((col) => {
@@ -220,83 +297,131 @@ function render() {
     }),
   );
 
-  $('dirty').hidden = JSON.stringify(payload()) === clean;
+  for (const b of board.querySelectorAll<HTMLElement>('.col-body')) {
+    b.scrollTop = scrolls.get(b.dataset.col!) ?? 0;
+  }
+  board.scrollLeft = across;
+
+  const saved = JSON.stringify(payload()) === clean;
+  $('dirty').textContent = saved ? 'saved' : 'saving…';
   $<HTMLButtonElement>('undo').disabled = past.length === 0;
   if (!$('inspect').hidden) paintInspect();
 }
 
 /* ------------------------------ drag and drop ------------------------------ */
 
-let dragId: string | null = null;
+let dragIds: string[] = [];
 let marker: HTMLElement | null = null;
 
 function clearMarks() {
   marker?.remove();
   marker = null;
   for (const el of board.querySelectorAll('[data-id]')) {
-    (el as HTMLElement).classList.remove('ring-2', 'ring-ink', 'ring-offset-2');
+    (el as HTMLElement).classList.remove('ring-emerald-500', 'ring-4');
   }
 }
+
+/** Cmd/ctrl-click builds a selection; a plain click clears it. */
+board.addEventListener('click', (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+  if (!card) return;
+  if (e.metaKey || e.ctrlKey) {
+    e.preventDefault();
+    const id = card.dataset.id!;
+    if (picked.has(id)) picked.delete(id);
+    else picked.add(id);
+    render();
+  } else if (picked.size) {
+    picked.clear();
+    render();
+  }
+});
 
 board.addEventListener('dragstart', (e) => {
   const card = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
   if (!card) return;
-  dragId = card.dataset.id!;
+  const id = card.dataset.id!;
+  // Dragging one of a selection drags all of it; dragging anything else is a
+  // plain single-card drag and drops the selection.
+  if (picked.has(id)) {
+    dragIds = [...board.querySelectorAll<HTMLElement>('[data-id]')]
+      .map((el) => el.dataset.id!)
+      .filter((x, i, a) => picked.has(x) && a.indexOf(x) === i);
+  } else {
+    dragIds = [id];
+    if (picked.size) {
+      picked.clear();
+      render();
+    }
+  }
   e.dataTransfer!.effectAllowed = 'move';
-  e.dataTransfer!.setData('text/plain', dragId);
+  e.dataTransfer!.setData('text/plain', dragIds.join(','));
 });
 
 board.addEventListener('dragend', () => {
-  dragId = null;
+  dragIds = [];
   clearMarks();
 });
 
 board.addEventListener('dragover', (e) => {
-  if (!dragId) return;
+  if (!dragIds.length) return;
   e.preventDefault();
   const body = (e.target as HTMLElement).closest<HTMLElement>('.col-body');
   if (!body) return;
   clearMarks();
 
   const over = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
-  // The middle of a card means "combine"; its edges mean "drop between".
-  if (over && over.dataset.id !== dragId && body.dataset.col !== HIGHLIGHTS) {
+  if (over && !dragIds.includes(over.dataset.id!) && body.dataset.col !== HIGHLIGHTS) {
     const r = over.getBoundingClientRect();
     const edge = (e.clientY - r.top) / r.height;
-    if (edge > 0.25 && edge < 0.75 && canCombine(dragId, over.dataset.id!)) {
-      over.classList.add('ring-2', 'ring-ink', 'ring-offset-2');
+    if (edge > 0.25 && edge < 0.75 && canCombine(dragIds, over.dataset.id!)) {
+      over.classList.add('ring-4', 'ring-emerald-500');
       return;
     }
   }
   marker = document.createElement('div');
   marker.className = 'drop-line';
-  const target = insertBefore(body, e.clientY);
-  body.insertBefore(marker, target);
+  body.insertBefore(marker, insertBefore(body, e.clientY));
 });
 
 board.addEventListener('drop', (e) => {
-  if (!dragId) return;
+  if (!dragIds.length) return;
   e.preventDefault();
   const body = (e.target as HTMLElement).closest<HTMLElement>('.col-body');
   if (!body) return;
   const col = body.dataset.col!;
   const over = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
-  const id = dragId;
+  const ids = [...dragIds];
 
-  if (over && over.dataset.id !== id && col !== HIGHLIGHTS) {
+  if (over && !ids.includes(over.dataset.id!) && col !== HIGHLIGHTS) {
     const r = over.getBoundingClientRect();
     const edge = (e.clientY - r.top) / r.height;
-    if (edge > 0.25 && edge < 0.75 && canCombine(id, over.dataset.id!)) {
+    if (edge > 0.25 && edge < 0.75 && canCombine(ids, over.dataset.id!)) {
       clearMarks();
-      return commit(() => combine(over.dataset.id!, id));
+      picked.clear();
+      return commit(() => {
+        for (const id of ids) combine(currentTargetId(over.dataset.id!), id);
+      });
     }
   }
 
   const beforeEl = insertBefore(body, e.clientY);
   const beforeId = beforeEl?.dataset.id ?? null;
   clearMarks();
-  commit(() => moveTo(id, col, beforeId));
+  picked.clear();
+  commit(() => {
+    for (const id of ids) moveTo(id, col, beforeId);
+  });
 });
+
+/**
+ * Combining folds the target into a new set, so its id changes each time.
+ * Follow it, or a multi-card combine would only keep the last pair.
+ */
+function currentTargetId(original: string): string {
+  const owner = combos.find((c) => c.members.includes(original));
+  return owner ? owner.id : original;
+}
 
 /** The card a drop at this height should land above, or null for the end. */
 function insertBefore(body: HTMLElement, y: number): HTMLElement | null {
@@ -307,8 +432,10 @@ function insertBefore(body: HTMLElement, y: number): HTMLElement | null {
   return null;
 }
 
-function canCombine(a: string, b: string) {
-  const parts = [a, b].flatMap((id) => combos.find((c) => c.id === id)?.members ?? [id]);
+function canCombine(dragged: string[], target: string) {
+  const parts = [...dragged, target].flatMap(
+    (id) => combos.find((c) => c.id === id)?.members ?? [id],
+  );
   return parts.every((id) => base.get(id)?.combinable);
 }
 
@@ -338,27 +465,31 @@ function moveTo(id: string, col: string, beforeId: string | null) {
   if (col === ARCHIVE) highlights = highlights.filter((x) => x !== id);
 }
 
-/** Fold `dragged` into `target`, making a set if the target is not one yet. */
+/**
+ * Fold `dragged` into `target`, making a set if the target is not one yet.
+ *
+ * Everything is read before `combos` is reassigned: folding a second card into
+ * a set that was created a moment earlier would otherwise look up an id that no
+ * longer resolves, which is how a multi-card combine used to fail silently.
+ */
 function combine(target: string, dragged: string) {
-  const parts = (id: string) => combos.find((c) => c.id === id)?.members ?? [id];
-  const members = [...parts(target), ...parts(dragged)];
+  const partsOf = (id: string) => combos.find((c) => c.id === id)?.members ?? [id];
+  const members = [...partsOf(target), ...partsOf(dragged)];
+  const existing = combos.find((c) => c.id === target);
+  const col = existing?.column ?? column.get(target) ?? base.get(members[0]!)!.category;
+  const title = existing?.title ?? titleOf(target);
+
   combos = combos.filter((c) => c.id !== target && c.id !== dragged);
 
-  const col =
-    combos.find((c) => c.id === target)?.column ??
-    column.get(target) ??
-    base.get(parts(target)[0]!)!.category;
-  const title = titleOf(target);
   let id = `set-${slug(title)}`;
   let n = 2;
   while (base.has(id) || combos.some((c) => c.id === id)) id = `set-${slug(title)}-${n++}`;
 
   combos.push({ id, title, column: col, members });
-  highlights = highlights.map((h) => (h === target ? id : h)).filter((h) => h !== dragged);
-  highlights = [...new Set(highlights)];
-
-  const list = membersOf(col);
-  order.set(col, list);
+  highlights = [
+    ...new Set(highlights.map((h) => (h === target ? id : h)).filter((h) => h !== dragged)),
+  ];
+  order.set(col, membersOf(col));
 }
 
 const slug = (t: string) =>
@@ -403,6 +534,7 @@ function paintInspect() {
         })),
   );
   $('i-out').hidden = !combo;
+  $('i-archive').hidden = !combo;
 }
 
 function insCard(id: string) {
@@ -431,13 +563,16 @@ $('inspect').addEventListener('drop', (e) => {
   const id = memberDrag;
   memberDrag = null;
 
-  if ((e.target as HTMLElement).closest('#i-out')) {
+  const out = (e.target as HTMLElement).closest('#i-out');
+  const arch = (e.target as HTMLElement).closest('#i-archive');
+  if (out || arch) {
     commit(() => {
       combo.members = combo.members.filter((m) => m !== id);
-      column.set(id, combo.column);
+      column.set(id, arch ? ARCHIVE : combo.column);
+      highlights = highlights.filter((h) => h !== id);
       if (combo.members.length < 2) dissolve(combo);
-      const list = membersOf(combo.column);
-      order.set(combo.column, list);
+      order.set(combo.column, membersOf(combo.column));
+      if (arch) order.set(ARCHIVE, membersOf(ARCHIVE));
     });
     if (!combos.some((c) => c.id === inspecting)) closeInspect();
     return;
@@ -555,7 +690,9 @@ async function save(): Promise<boolean> {
     const out = await res.json();
     if (!out.ok) throw new Error(out.error);
     clean = body;
-    render();
+    dropDraft();
+    $('restored').hidden = true;
+    $('dirty').textContent = 'saved';
     return true;
   } catch (err) {
     flash(`save failed — ${err}`, false);
@@ -563,12 +700,49 @@ async function save(): Promise<boolean> {
   }
 }
 
-$('save').addEventListener('click', async () => {
-  if (await save()) flash('saved to curation.ts');
+/**
+ * Publishing is the one outward-facing thing the board does: it commits
+ * curation.ts and pushes, which is what triggers the deploy. It asks first,
+ * because unlike everything else here it cannot be undone with Undo.
+ */
+const publish = $<HTMLButtonElement>('publish');
+let armed = false;
+publish.addEventListener('click', async () => {
+  if (!armed) {
+    armed = true;
+    publish.textContent = 'Push to zacreinke.com?';
+    flash('click again to publish — this deploys the live site');
+    setTimeout(() => {
+      armed = false;
+      publish.textContent = 'Publish';
+    }, 6000);
+    return;
+  }
+  armed = false;
+  publish.textContent = 'Publishing…';
+  publish.disabled = true;
+  try {
+    if (!(await save())) throw new Error('could not write curation.ts');
+    const res = await fetch('/__curate/publish', { method: 'POST' });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error);
+    flash(out.pushed ? 'published — the deploy is running' : 'nothing to publish');
+  } catch (err) {
+    flash(`publish failed — ${err}`, false);
+  } finally {
+    publish.disabled = false;
+    publish.textContent = 'Publish';
+  }
 });
 
 addEventListener('beforeunload', (e) => {
   if (JSON.stringify(payload()) !== clean) e.preventDefault();
 });
 
+$('discard').addEventListener('click', () => {
+  dropDraft();
+  location.reload();
+});
+
+offerDraft();
 render();
