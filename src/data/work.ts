@@ -1150,7 +1150,7 @@ export const work: WorkItem[] = [
     src: img('campaign-graphics-07-attracting-retaining-webinar-banner-4.png'),
   },
   {
-    id: 'ai-won-u2019t-save-your-hiring',
+    id: 'ai-wont-save-your-hiring',
     title: '\u201cAI won\u2019t save your hiring\u201d',
     caption: 'Webinar promotion for Amtec',
     category: 'graphic-design',
@@ -1317,7 +1317,7 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'workiversary-u2014-seven-years',
+    id: 'workiversary-seven-years',
     title: 'Workiversary \u2014 seven years',
     caption: 'Recognition graphic for Amtec',
     category: 'graphic-design',
@@ -1325,7 +1325,7 @@ export const work: WorkItem[] = [
     src: img('amtec-culture-01-happy-workiversary-zac-7.webp'),
   },
   {
-    id: 'workiversary-u2014-twenty-years',
+    id: 'workiversary-twenty-years',
     title: 'Workiversary \u2014 twenty years',
     caption: 'Recognition graphic for Amtec',
     category: 'graphic-design',
@@ -1357,7 +1357,7 @@ export const work: WorkItem[] = [
     src: img('amtec-culture-05-owners-only-retreat-2019-d2.webp'),
   },
   {
-    id: 'ruth-u2019s-chris-dinner',
+    id: 'ruths-chris-dinner',
     title: 'Ruth\u2019s Chris dinner',
     caption: 'Event invitation for Amtec',
     category: 'graphic-design',
@@ -1585,7 +1585,7 @@ export const work: WorkItem[] = [
     ],
   },
   {
-    id: 'happy-bosss-day',
+    id: 'happy-boss-day',
     title: 'Happy Boss\'s Day',
     caption: 'Print collateral for Amtec',
     category: 'graphic-design',
@@ -1933,7 +1933,7 @@ export const work: WorkItem[] = [
     src: img('recording-studio-2.jpg'),
   },
   {
-    id: 'paul-s-lighthouse',
+    id: 'pauls-lighthouse',
     title: 'Paul\'s Lighthouse',
     caption: 'Lighthouse illustration',
     category: 'illustration',
