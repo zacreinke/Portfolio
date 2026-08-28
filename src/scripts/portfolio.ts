@@ -10,6 +10,7 @@ type Frame = {
   caption: string;
   kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
   src: string;
+  thumb?: string;
   width: number;
   height: number;
   slide: number;
@@ -343,7 +344,7 @@ function step(by: number) {
 
 for (const tile of tiles) {
   tile.querySelector('[data-open]')?.addEventListener('click', () => {
-    open(Number(tile.dataset.index));
+    open(Number(tile.dataset.index) + Number(tile.dataset.offset ?? 0));
   });
 }
 
@@ -419,6 +420,137 @@ dialog.addEventListener('close', () => {
       layout();
       revealInView();
     });
+  }
+}
+
+/* --------------------------- carousel auto-advance ------------------------- */
+
+/**
+ * Carousel tiles cycle their stills in the grid, sliding right to left inside a
+ * frame that never changes size.
+ *
+ * One shared ticker rather than a timer per tile: the wait between changes is
+ * identical everywhere, and only the phase differs. Neighbours are pushed well
+ * apart — half an interval across columns, ~0.6 down a column — so a screenful
+ * never turns over at once.
+ */
+{
+  const INTERVAL = 5200; // ms a slide is held
+  const SLIDE = 620; // ms the swap takes
+
+  type Rotator = {
+    tile: HTMLElement;
+    frames: number[]; // indices into `frames`, image slides only
+    slots: [HTMLImageElement, HTMLImageElement];
+    showing: 0 | 1;
+    at: number;
+    due: number;
+    busy: boolean;
+    paused: boolean;
+  };
+
+  const rotators: Rotator[] = [];
+
+  for (const tile of tiles) {
+    const base = Number(tile.dataset.index);
+    const total = Number(frames[base]?.slides ?? 1);
+    if (total < 2) continue;
+
+    // Only stills rotate — a model, document or player is not something to flip past.
+    const own: number[] = [];
+    for (let i = base; i < base + total && i < frames.length; i++) {
+      if (frames[i]!.kind === 'image' && frames[i]!.thumb) own.push(i);
+    }
+    if (own.length < 2) continue;
+
+    const media = tile.querySelector<HTMLElement>('[data-media]');
+    const first = media?.querySelector('img');
+    if (!media || !first) continue;
+
+    const second = document.createElement('img');
+    second.className = first.className;
+    second.alt = '';
+    second.setAttribute('aria-hidden', 'true');
+    second.decoding = 'async';
+    second.style.transform = 'translateX(100%)';
+    media.append(second);
+
+    const rot: Rotator = {
+      tile, frames: own, slots: [first as HTMLImageElement, second],
+      showing: 0, at: 0, due: 0, busy: false, paused: false,
+    };
+    // Hovering brings up the fan; rotating underneath it reads as noise.
+    tile.addEventListener('pointerenter', () => { rot.paused = true; });
+    tile.addEventListener('pointerleave', () => { rot.paused = false; });
+    rotators.push(rot);
+  }
+
+  /** Give every tile its own phase, spread by column and by row within it. */
+  const phase = () => {
+    const cols = [...(document.querySelector('.masonry')?.children ?? [])];
+    for (const rot of rotators) {
+      const found = cols.findIndex((c) => c.contains(rot.tile));
+      const col = found < 0 ? 0 : found;
+      const row = found < 0 ? 0 : [...cols[col]!.children].indexOf(rot.tile);
+      const turn = col * 0.5 + row * 0.618;
+      const offset = (((turn % 1) + 1) % 1) * INTERVAL;
+      rot.due = performance.now() + INTERVAL + offset;
+    }
+  };
+
+  const advance = (rot: Rotator) => {
+    rot.busy = true;
+    const next = (rot.at + 1) % rot.frames.length;
+    const incoming = rot.slots[rot.showing === 0 ? 1 : 0];
+    const outgoing = rot.slots[rot.showing];
+    incoming.src = frames[rot.frames[next]!]!.thumb!;
+
+    const run = () => {
+      // Park the incoming slide off to the right with no transition, force the
+      // style to land, then move both in the same frame.
+      incoming.style.transition = 'none';
+      incoming.style.transform = 'translateX(100%)';
+      void incoming.offsetWidth;
+      const ease = `transform ${SLIDE}ms cubic-bezier(0.65, 0, 0.35, 1)`;
+      incoming.style.transition = ease;
+      outgoing.style.transition = ease;
+      incoming.style.transform = 'translateX(0)';
+      outgoing.style.transform = 'translateX(-100%)';
+      rot.showing = rot.showing === 0 ? 1 : 0;
+      rot.at = next;
+      // Opening the lightbox should land on whatever is showing.
+      rot.tile.dataset.offset = String(rot.frames[next]! - Number(rot.tile.dataset.index));
+      setTimeout(() => { rot.busy = false; }, SLIDE);
+    };
+
+    // Decode first so a slow image never slides in half-painted — but race it
+    // against a deadline. decode() can hang indefinitely (a backgrounded tab
+    // never resolves it), and waiting forever would stop the tile for good.
+    const decoded = incoming.decode ? incoming.decode().catch(() => {}) : Promise.resolve();
+    let ran = false;
+    const once = () => { if (!ran) { ran = true; run(); } };
+    decoded.then(once);
+    setTimeout(once, 400);
+  };
+
+  const tick = () => {
+    const now = performance.now();
+    for (const rot of rotators) {
+      if (rot.busy || rot.paused || now < rot.due) continue;
+      const r = rot.tile.getBoundingClientRect();
+      if (rot.tile.hidden || r.bottom < 0 || r.top > innerHeight) {
+        rot.due = now + INTERVAL; // off screen: hold, don't burn through slides
+        continue;
+      }
+      advance(rot);
+      rot.due = now + INTERVAL;
+    }
+  };
+
+  if (rotators.length && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    phase();
+    addEventListener('resize', phase);
+    setInterval(tick, 200);
   }
 }
 
