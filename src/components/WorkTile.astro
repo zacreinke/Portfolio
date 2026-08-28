@@ -9,9 +9,13 @@ interface Props {
   /** Index of this item's first slide in the flat lightbox sequence. */
   index: number;
   eager?: boolean;
+  /** Position in the Highlights list, if it is on it. */
+  rankAll?: number;
+  /** Position among the pieces pinned to the top of its category. */
+  rankCat?: number;
 }
 
-const { item, index, eager = false } = Astro.props;
+const { item, index, eager = false, rankAll, rankCat } = Astro.props;
 
 const cover: ImageMetadata = coverOf(item);
 
@@ -96,8 +100,10 @@ const mediaClass =
   data-category={item.category}
   data-ratio={ratio.toFixed(4)}
   data-span={item.wide ? 2 : 1}
-  data-highlight={item.highlight ? '1' : undefined}
-  hidden={!item.highlight}
+  data-highlight={rankAll === undefined ? undefined : '1'}
+  data-rank-all={rankAll}
+  data-rank-cat={rankCat}
+  hidden={rankAll === undefined}
 >
   {
     fan.map((src, i) => (

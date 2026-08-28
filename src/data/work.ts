@@ -1,5 +1,6 @@
 import type { ImageMetadata } from 'astro';
 import type { Category } from './site';
+import { featured, highlights } from './curation';
 
 /* ---------------------------------------------------------------------------
    Adding work is two steps:
@@ -76,8 +77,6 @@ type Base = {
   category: Category;
   /** Span two columns wherever the grid is at least three wide. */
   wide?: boolean;
-  /** Shown in Highlights, the curated landing view. Categories hold everything. */
-  highlight?: boolean;
 };
 
 /**
@@ -96,6 +95,48 @@ export type WorkItem = Base &
     | { kind: 'embed'; embed: string; ratio?: number; poster: ImageMetadata }
   );
 
+/**
+ * Curation is a list of ids, so a rename in work.ts would silently drop a
+ * piece from Highlights. Resolve it here instead and throw with the valid
+ * ids, the same way img() does for a missing filename.
+ */
+function checkIds(ids: readonly string[], where: string): string[] {
+  const known = new Set(work.map((w) => w.id));
+  for (const id of ids) {
+    if (known.has(id)) continue;
+    // 180 ids is too many to dump, so offer the ones that share the most with
+    // what was typed — a rename is the likely cause, and its replacement will
+    // usually be near the top.
+    const near = [...known]
+      .map((k) => {
+        const parts = id.split('-');
+        return { k, score: parts.filter((p) => k.includes(p)).length };
+      })
+      .filter((m) => m.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
+      .map((m) => m.k);
+    throw new Error(
+      `[curation.ts] ${where} names "${id}", which is no longer an id in work.ts.` +
+        (near.length ? ` Did you mean: ${near.join(', ')}?` : '') +
+        ` (${known.size} ids available.)`,
+    );
+  }
+  return [...ids];
+}
+
+/** Highlight ids in display order, verified to exist. */
+export const highlightOrder = (): string[] => checkIds(highlights, 'highlights');
+
+/** Pinned ids per category, verified to exist. */
+export function featuredOrder(): Partial<Record<Category, string[]>> {
+  const out: Partial<Record<Category, string[]>> = {};
+  for (const [cat, ids] of Object.entries(featured)) {
+    out[cat as Category] = checkIds(ids ?? [], `featured.${cat}`);
+  }
+  return out;
+}
+
 const yt = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
 
 const sc = (kind: 'tracks' | 'playlists', id: number) =>
@@ -110,7 +151,6 @@ export const work: WorkItem[] = [
      is a white mark on transparency that rendered invisible on a white tile. */
   {
     id: 'bilflo-identity',
-    highlight: true,
     title: 'Bilflo — Identity',
     caption: 'Logo and brand system for a workforce management platform',
     category: 'branding',
@@ -200,7 +240,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'johnnys-mobile-detail',
-    highlight: true,
     title: "Johnny's Mobile Detail",
     caption: 'Logo design for a mobile auto detailing service',
     category: 'branding',
@@ -214,7 +253,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'in-your-prime',
-    highlight: true,
     title: 'In Your Prime',
     caption: 'Logo design and product branding',
     category: 'branding',
@@ -244,7 +282,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-60-event',
-    highlight: true,
     title: 'Amtec 60 — The Event',
     caption: 'Invitation, program and signage for the anniversary party',
     category: 'graphic-design',
@@ -286,7 +323,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'mic-drop',
-    highlight: true,
     title: 'Mic Drop',
     caption: 'Logo design and collateral for a podcast brand',
     category: 'branding',
@@ -349,7 +385,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'fender-jaguar',
-    highlight: true,
     title: 'Fender Jaguar',
     caption: 'Guitar illustration',
     category: 'illustration',
@@ -402,7 +437,6 @@ export const work: WorkItem[] = [
      illustrations, so the set stays coherent even at that length. */
   {
     id: 'the-shop',
-    highlight: true,
     title: 'The Shop — Framed Prints',
     caption: 'Printable illustrations sold as home decor',
     category: 'illustration',
@@ -432,7 +466,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'guitar-print-les-paul',
-    highlight: true,
     title: 'Les Paul \u2014 Prints',
     caption: 'Guitar illustration offered as a print, three colorways',
     category: 'illustration',
@@ -477,7 +510,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'be-my-quarantine',
-    highlight: true,
     title: 'Be My Quarantine',
     caption: 'Illustration, 2020',
     category: 'illustration',
@@ -502,7 +534,6 @@ export const work: WorkItem[] = [
   /* ------------------------------ Web / UI --------------------------------- */
   {
     id: 'bilflo-site-walkthrough',
-    highlight: true,
     title: 'Bilflo — Site Walkthrough',
     caption: 'A walkthrough of the marketing site',
     category: 'web-ui',
@@ -512,7 +543,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-app',
-    highlight: true,
     title: 'Bilflo App Illustrations',
     caption: 'Spot illustrations for a workforce management product UI',
     category: 'web-ui',
@@ -539,7 +569,6 @@ export const work: WorkItem[] = [
   /* -------------------------------- 3D ------------------------------------- */
   {
     id: 'baby-artemis',
-    highlight: true,
     title: 'Baby Artemis',
     caption: 'Artemis rocket model with a collapsible exhaust flame',
     category: '3d',
@@ -562,7 +591,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'vw-thing',
-    highlight: true,
     title: 'VW Thing — Tooned',
     caption: 'Stylized Volkswagen Type 181 model',
     category: '3d',
@@ -634,7 +662,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'catalina-planter',
-    highlight: true,
     title: 'The Catalina Planter',
     caption: 'Planter design',
     category: '3d',
@@ -664,7 +691,6 @@ export const work: WorkItem[] = [
   /* ----------------------------- Videography ------------------------------- */
   {
     id: 'amtec-60-film',
-    highlight: true,
     title: '60 Years — A Film About Amtec',
     caption: 'Anniversary documentary — directed, shot and edited',
     category: 'videography',
@@ -674,7 +700,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-core-values',
-    highlight: true,
     wide: true,
     title: 'Our Core Values',
     caption: 'Internal brand film for Amtec Staffing',
@@ -721,7 +746,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-prismhr',
-    highlight: true,
     wide: true,
     title: 'PrismHR Integration',
     caption: 'Integration explainer — design, animation and edit',
@@ -776,7 +800,6 @@ export const work: WorkItem[] = [
   --------------------------------------------------------------------------- */
   {
     id: 'shine-ep',
-    highlight: true,
     title: 'SHINE — EP',
     caption: 'Four-track EP, 2015 — written, performed and produced',
     category: 'music',
@@ -839,7 +862,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-christmas-2022',
-    highlight: true,
     title: 'Amtec Christmas Card 2022',
     caption: 'Printed card and envelope',
     category: 'graphic-design',
@@ -862,7 +884,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'desert-christmas',
-    highlight: true,
     title: 'Desert Christmas',
     caption: 'A mid-century desert house on Christmas night',
     category: 'illustration',
@@ -874,7 +895,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'lit-tree',
-    highlight: true,
     title: 'Lit tree',
     caption: 'Christmas artwork',
     category: 'illustration',
@@ -923,7 +943,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-bitz',
-    highlight: true,
     title: 'Amtec bitz Newsletters',
     caption: 'Industry newsletter identity and banner system',
     category: 'graphic-design',
@@ -1070,7 +1089,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'tristaff-identity',
-    highlight: true,
     title: 'TriStaff — Identity',
     caption: 'Identity rollout for Amtec\u2019s TriStaff division',
     category: 'branding',
@@ -1099,7 +1117,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'economic-reports',
-    highlight: true,
     title: 'US Economic Report Series',
     caption: 'Monthly labour-market report design',
     category: 'graphic-design',
@@ -1675,7 +1692,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'tools-of-the-trade',
-    highlight: true,
     title: 'Tools of the trade',
     caption: 'Editorial illustration for Amtec',
     category: 'illustration',
@@ -1740,7 +1756,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'purple-squirrel',
-    highlight: true,
     title: 'Purple squirrel',
     caption: 'Editorial illustration for Amtec',
     category: 'illustration',
@@ -1761,7 +1776,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'amtec-web',
-    highlight: true,
     title: 'Amtec Website',
     caption: 'Marketing site design for a staffing firm',
     category: 'web-ui',
@@ -2041,7 +2055,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'clearly-filtered',
-    highlight: true,
     title: 'Clearly Filtered',
     caption: 'Product marketing for a water filtration brand',
     category: 'graphic-design',
@@ -2066,7 +2079,6 @@ export const work: WorkItem[] = [
   /* --------------------------- Client brand work --------------------------- */
   {
     id: 'evergreen-identity',
-    highlight: true,
     title: 'Evergreen — Identity',
     caption: 'Badge mark and brand system for an outdoor company',
     category: 'branding',
@@ -2175,7 +2187,6 @@ export const work: WorkItem[] = [
   },
   {
     id: 'bilflo-display-ads',
-    highlight: true,
     title: 'Bilflo Display Ads',
     caption: 'A templated display campaign for a workforce platform',
     category: 'graphic-design',

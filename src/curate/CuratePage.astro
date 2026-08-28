@@ -1,0 +1,134 @@
+---
+/**
+ * Local curation tool. Not part of the portfolio: this file sits outside
+ * src/pages so Astro never auto-routes it, and astro.config.mjs only injects
+ * the /curate route when the command is `dev`. It cannot ship.
+ *
+ * Pick Highlights by looking at the work rather than reading ids, then Save
+ * writes src/data/curation.ts through the dev-server middleware and HMR
+ * re-renders the real site behind you.
+ */
+import { getImage } from 'astro:assets';
+import { work, coverOf } from '../data/work';
+import { highlights, featured } from '../data/curation';
+import { categories, categoryLabel } from '../data/site';
+import '../styles/global.css';
+
+const items = await Promise.all(
+  work.map(async (item) => {
+    const cover = coverOf(item);
+    const thumb =
+      cover.format === 'gif' || cover.format === 'svg'
+        ? cover.src
+        : (await getImage({ src: cover, width: 320, format: 'webp', quality: 70 })).src;
+    return {
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      categoryLabel: categoryLabel(item.category),
+      thumb,
+      ratio: (cover.width / cover.height).toFixed(4),
+    };
+  }),
+);
+
+const state = { highlights, featured, items };
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Curate — local only</title>
+  </head>
+  <body class="bg-page text-ink">
+    <header
+      class="sticky top-0 z-20 flex flex-wrap items-center gap-4 border-b border-line bg-page/95 px-6 py-4 backdrop-blur"
+    >
+      <div class="mr-auto">
+        <p class="font-heading text-[22px] font-medium tracking-[-0.02em]">Curate</p>
+        <p class="text-[13px] opacity-60">
+          Local tool — never deployed. Click a piece to add it to Highlights; drag the
+          numbered ones to reorder. Pin sends a piece to the top of its own tab.
+        </p>
+      </div>
+      <span id="count" class="label-caps tabular-nums opacity-60"></span>
+      <button
+        type="button"
+        id="copy"
+        class="label-caps cursor-pointer rounded-full border border-line px-4 py-2 transition-colors hover:bg-pill"
+      >
+        Copy
+      </button>
+      <button
+        type="button"
+        id="save"
+        class="label-caps cursor-pointer rounded-full bg-ink px-5 py-2 text-card transition-opacity hover:opacity-80"
+      >
+        Save
+      </button>
+      <span id="status" class="label-caps opacity-0 transition-opacity"></span>
+    </header>
+
+    <main class="px-6 py-6">
+      <section class="mb-10">
+        <h2 class="label-caps mb-3 opacity-60">Highlights — drag to reorder</h2>
+        <ol
+          id="chosen"
+          class="flex min-h-[92px] flex-wrap gap-2 rounded-[18px] border border-dashed border-line p-3"
+        >
+        </ol>
+      </section>
+
+      {
+        categories.map((c) => (
+          <section class="mb-10" data-cat={c.id}>
+            <h2 class="label-caps mb-3 opacity-60">{c.label}</h2>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-4">
+              {items
+                .filter((i) => i.category === c.id)
+                .map((i) => (
+                  <figure class="group relative" data-card data-id={i.id} data-cat={i.category}>
+                    <button
+                      type="button"
+                      data-pick
+                      class="block w-full cursor-pointer overflow-hidden rounded-[14px] border-2 border-line bg-card transition-colors"
+                    >
+                      <span class="relative block w-full" style="aspect-ratio:1.2">
+                        <img
+                          src={i.thumb}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          class="absolute inset-0 size-full object-contain p-2"
+                        />
+                      </span>
+                    </button>
+                    <span
+                      data-badge
+                      class="pointer-events-none absolute top-2 left-2 hidden size-7 items-center justify-center rounded-full bg-ink text-[12px] font-semibold text-card tabular-nums"
+                    />
+                    <button
+                      type="button"
+                      data-pin
+                      title="Pin to the top of this category"
+                      class="absolute top-2 right-2 flex size-7 cursor-pointer items-center justify-center rounded-full border border-line bg-card/90 text-[12px] transition-colors"
+                    >
+                      ↑
+                    </button>
+                    <figcaption class="mt-1.5 text-[12px] leading-tight opacity-70">
+                      {i.title}
+                    </figcaption>
+                  </figure>
+                ))}
+            </div>
+          </section>
+        ))
+      }
+    </main>
+
+    <script is:inline set:html={`window.__CURATE__ = ${JSON.stringify(state)};`} />
+    <script src="./curate.ts"></script>
+  </body>
+</html>

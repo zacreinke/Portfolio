@@ -10,6 +10,8 @@ type Frame = {
   caption: string;
   kind: 'image' | 'video' | 'embed' | 'model' | 'doc';
   highlight: boolean;
+  rankAll: number;
+  rankCat: number;
   src: string;
   thumb?: string;
   width: number;
@@ -61,9 +63,23 @@ let resetReveal: (() => void) | null = null;
 /** Indices into `frames`, narrowed to the active tab. The lightbox never
  *  navigates outside this sequence. */
 let sequence: number[] = frames.map((_, i) => i);
+
+/** Which tab is showing; layout() needs it to know which rank to sort on. */
+let activeFilter = 'all';
+
+/**
+ * Curation rank for a tile under the given tab: its place in the Highlights
+ * list, or among the pieces pinned to the top of its category. Unranked work
+ * sorts last, and since the sort is stable it keeps its existing order there.
+ */
+const rankOf = (el: HTMLElement, filter: string): number => {
+  const raw = filter === 'all' ? el.dataset.rankAll : el.dataset.rankCat;
+  return raw === undefined || raw === '' ? Number.POSITIVE_INFINITY : Number(raw);
+};
 let cursor = 0;
 
 function applyFilter(next: string, animate = false) {
+  activeFilter = next;
   for (const tab of tabs) {
     const on = tab.dataset.filter === next;
     tab.setAttribute('aria-selected', String(on));
@@ -81,10 +97,23 @@ function applyFilter(next: string, animate = false) {
     el.hidden = !(next === el.dataset.empty && emptyCategories.includes(next));
   }
 
-  sequence = frames.reduce<number[]>((acc, f, i) => {
-    if (next === 'all' ? f.highlight : f.category === next) acc.push(i);
-    return acc;
-  }, []);
+  // Group the frames by their item so a carousel's slides stay together, then
+  // order the items the same way the grid will. Sorting the flat frame list
+  // directly would interleave slides from different pieces.
+  const items: { rank: number; frames: number[] }[] = [];
+  const byItem = new Map<string, { rank: number; frames: number[] }>();
+  frames.forEach((f, i) => {
+    if (!(next === 'all' ? f.highlight : f.category === next)) return;
+    let entry = byItem.get(f.itemId);
+    if (!entry) {
+      entry = { rank: next === 'all' ? f.rankAll : f.rankCat, frames: [] };
+      byItem.set(f.itemId, entry);
+      items.push(entry);
+    }
+    entry.frames.push(i);
+  });
+  items.sort((a, b) => a.rank - b.rank);
+  sequence = items.flatMap((it) => it.frames);
 
   history.replaceState(null, '', next === 'all' ? location.pathname : `#${next}`);
 
@@ -423,7 +452,10 @@ dialog.addEventListener('close', () => {
 
     layout = () => {
       const cols = columnsFor(innerWidth);
-      const visible = tiles.filter((t) => !t.hidden);
+      // Stable sort: curated work leads, everything else holds its DOM order.
+      const visible = tiles
+        .filter((t) => !t.hidden)
+        .sort((a, b) => rankOf(a, activeFilter) - rankOf(b, activeFilter));
       const width = grid.clientWidth;
       if (!width) return;
 
