@@ -566,6 +566,53 @@ const catalog: WorkItem[] = [
   },
 
   /* ------------------------------ Web / UI --------------------------------- */
+  /* Screen recordings of sites I designed and built. Loom takes the same
+     `?autoplay=1` the YouTube embeds do, so the lightbox needs no special
+     case; the posters are a still frame of Loom's own thumbnail. */
+  {
+    id: 'bilflo-marketing-site',
+    title: 'Bilflo — Marketing Site',
+    caption: 'The Bilflo marketing site',
+    category: 'web-ui',
+    kind: 'image',
+    src: img('bilflo-add-06-bf6-ig.jpg'),
+  },
+  {
+    id: 'amtec-site-walkthrough',
+    title: 'Amtec — Site Walkthrough',
+    caption: 'A walkthrough of the Amtec site',
+    category: 'web-ui',
+    kind: 'embed',
+    embed: 'https://www.loom.com/embed/d460a4fad49846d5ab06f9c4117f7323',
+    poster: img('loom-amtec-website.gif'),
+  },
+  {
+    id: 'amtec-me-walkthrough',
+    title: 'Amtec.Me — Site Walkthrough',
+    caption: 'A walkthrough of the Amtec.Me site',
+    category: 'web-ui',
+    kind: 'embed',
+    embed: 'https://www.loom.com/embed/6a5e89656ddb4986a29405ff0cf1521e',
+    poster: img('loom-amtec-me.gif'),
+  },
+  {
+    id: 'tristaff-site-walkthrough',
+    title: 'TriStaff — Site Walkthrough',
+    caption: 'A walkthrough of the TriStaff site',
+    category: 'web-ui',
+    kind: 'embed',
+    embed: 'https://www.loom.com/embed/f7935ddb17d24897b466b7f3893e6b33',
+    poster: img('loom-tristaff.gif'),
+  },
+  {
+    id: 'amtec-labs-walkthrough',
+    title: 'Amtec Labs — Site Walkthrough',
+    caption: 'A walkthrough of the Amtec Labs site',
+    category: 'web-ui',
+    kind: 'embed',
+    embed: 'https://www.loom.com/embed/160b99e0182e428abadb193908aeac1d',
+    poster: img('loom-amtec-labs.gif'),
+  },
   {
     id: 'bilflo-site-walkthrough',
     title: 'Bilflo — Site Walkthrough',
@@ -573,7 +620,7 @@ const catalog: WorkItem[] = [
     category: 'web-ui',
     kind: 'embed',
     embed: 'https://www.loom.com/embed/8197d10e515245918d4f15abac9c5882',
-    poster: img('bilflo-add-06-bf6-ig.jpg'),
+    poster: img('loom-bilflo.gif'),
   },
   {
     id: 'bilflo-app',
