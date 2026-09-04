@@ -144,6 +144,21 @@ const curateSaver = {
   apply: 'serve',
   /** @param {import('vite').ViteDevServer} server */
   configureServer(server) {
+    /** Drop the cached curation module so the next render reads the file. */
+    const refresh = () => {
+      const mod = server.moduleGraph.getModuleById(CURATION);
+      if (mod) server.moduleGraph.invalidateModule(mod, new Set(), Date.now(), true);
+    };
+
+    // The watcher ignores curation.ts so writing it cannot reload the board.
+    // The cost is that Vite never learns the file changed — by the board, by a
+    // git checkout, by anything — and would serve whatever it read at startup.
+    // Refreshing on the way in means the board always opens on what is on disk.
+    server.middlewares.use('/curate', (/** @type {any} */ _req, /** @type {any} */ _res, /** @type {any} */ next) => {
+      refresh();
+      next();
+    });
+
     server.middlewares.use('/__curate/publish', (/** @type {any} */ req, /** @type {any} */ res, /** @type {any} */ next) => {
       if (req.method !== 'POST') return next();
       publishCuration()
@@ -200,6 +215,11 @@ const curateSaver = {
             renderCuration(highlights, featured, hidden, merges, moves, splits),
             'utf8',
           );
+          // The watcher ignores this file so writing it does not reload the
+          // board — but that also means Vite never notices it changed, and the
+          // dev server would keep serving the copy it read at startup. Invalidate
+          // it by hand: fresh reads, still no reload.
+          refresh();
           res.setHeader('content-type', 'application/json');
           res.end(JSON.stringify({ ok: true, count: highlights.length }));
         } catch (err) {

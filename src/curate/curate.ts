@@ -60,8 +60,15 @@ const column = new Map<string, string>();
 for (const card of state.cards) column.set(card.id, state.moves[card.id] ?? card.category);
 for (const id of state.hidden) column.set(id, ARCHIVE);
 
-/** Order within each column, holding card ids and combo ids alike. */
-const order = new Map<string, string[]>();
+/**
+ * Order within each column, holding card ids and combo ids alike. Seeded from
+ * what was saved: leaving it empty meant a column you never touched had no
+ * entry to write back, so one drag anywhere silently discarded the order of
+ * every other column.
+ */
+const order = new Map<string, string[]>(
+  Object.entries(state.featured).map(([cat, ids]) => [cat, [...(ids ?? [])]]),
+);
 
 /** Cards picked with cmd/ctrl-click, so several can be dragged at once. */
 const picked = new Set<string>();
