@@ -18,9 +18,11 @@ export const highlights: string[] = [
   'set-logo-presentation',
   'set-brand-style-guide-12-pages',
   'set-card-front',
+  'mustang-floor',
   'bilflo-prismhr',
   'set-sunburst-on-green',
   'set-in-your-prime-primary-mark',
+  'set-workstation-wallpaper',
   'starship-mini',
   'amtec-site-walkthrough',
   'me-without-you',
@@ -32,9 +34,9 @@ export const highlights: string[] = [
  * no need to list all 180 pieces to promote three of them.
  */
 export const featured: Partial<Record<Category, string[]>> = {
-  'branding': ['amtec-60-identity--1', 'inspire', 'zr-monogram--1', 'tristaff-identity--0', 'hypersonic-staffing', 'rooted-roots', 'csp-member', 'bee-podcast', 'revd-up', 'hiring-scott--0'],
+  'branding': ['set-logo-presentation', 'set-brand-style-guide-12-pages', 'set-brand-presentation', 'set-in-your-prime-primary-mark', 'set-johnny-s-mobile-detail-full-lockup', 'set-anniversary-mark', 'hypersonic-staffing', 'inspire', 'zr-monogram--1', 'rooted-roots', 'csp-member', 'bee-podcast', 'revd-up', 'hiring-scott--0', 'set-blackmagic-collective-circular-badge', 'set-mic-drop-primary-mark', 'set-badge-lettering', 'set-alternate-lockup', 'set-mark-first-direction'],
   'graphic-design': ['business-cards', 'the-work-weekly', 'team-shirts', 'trade-show-banner', 'summer-of-automated-invoicing', 'staffing-world-2021-ticket', 'amtec-x-bilflo-announcement-banner', 'core-flyer-front-and-back', 'amtec-holiday-campaigns--3', 'amtec-holiday-campaigns--5', 'amtec-holiday-campaigns--6', 'amtec-conference-booths--0', 'amtec-conference-booths--1', 'amtec-conference-booths--2', 'amtec-conference-booths--3', 'amtec-conference-booths--4', 'amtec-conference-booths--5', 'amtec-conference-booths--6', 'az-shrm-2024', 'calshrm-2024', 'cahr-2024', 'cahr-2022-disneyland', 'nv-shrm-2021', 'shrm-2025', 'tristaff-zoo-day', 'pihra-celu-2021', 'al-madrigal-speaker-announcement', 'raffle-winner-announcement', 'amtec-signage--4', 'amtec-signage--7', 'amtec-merch--0', 'amtec-merch--1', 'amtec-merch--2', 'amtec-merch--3', 'tristaff-services--4', 'job-post-ads--0', 'job-post-ads--1', 'job-post-ads--2', 'job-post-ads--3', 'amtec-benefits-campaign--0', 'amtec-benefits-campaign--1', 'amtec-benefits-campaign--2', 'amtec-benefits-campaign--3', 'amtec-benefits-campaign--4', 'amtec-benefits-campaign--5', 'attracting-retaining', 'ai-wont-save-your-hiring', 'improve-your-hiring-process', 'zoom-background', 'indeed-banner', 'google-forms-banner', 'workiversary-seven-years', 'workiversary-twenty-years', 'core-values-2022', 'recruiter-spotlight', 'owners-retreat-2019', 'ruths-chris-dinner', 'nfuse-2026', 'amtec-brand-docs--0', 'amtec-brand-docs--1', 'amtec-brand-docs--2', 'amtec-brand-docs--3', 'amtec-social-guides--0', 'amtec-social-guides--1', 'amtec-social-guides--2', 'amtec-social-guides--3', 'amtec-social-guides--4', 'vacation-brochure-redesign-2023', 'construction-flyer-2023', 'tristaff-flyer-2024', 'halloween-networking', 'arizona-office-grand-opening', 'happy-boss-day', 'vaccinate-oc-flyer', 'win-a-day-at-disneyland', 'certificate-of-appreciation', 'peoples-care-case-study', '75k', 'amtec-web--4', 'tristaff-identity--0'],
-  'illustration': ['fender-mustang', 'fender-jaguar', 'fender-telecaster', 'ryans-guitar', 'tylers-bass', 'gibson-les-paul-junior', 'mustang-floor', 'hire-better', 'amtec-merch--4', 'amtec-christmas-cards--2', 'remote-workers', 'yodump-sticker', 'ordinary-girl--0', 'ordinary-girl--2', 'ordinary-girl--3', 'ordinary-girl--4', 'cacti', 'airspeed-alive', 'bilflo-app--0', 'bilflo-app--1', 'bilflo-app--2', 'bilflo-app--3', 'bilflo-app--4', 'bilflo-app--5', 'bilflo-app--6', 'lit-tree', 'the-true-light-was-coming-into-the-world', 'tunable-tunes--1', 'ornament-badge', 'eager-eyes-brand--2', 'joy-to-the-world-gift-card', 'tools-of-the-trade', 'the-power-of-collaboration', 'behavioral-interview-questions-cover', 'how-to-retain-top-engineers-ebook', 'amtec-web--3', 'bug', 'bus-truck', 'porsche-911', 'jag-e-star-wars', 'hat-angel', 'hat-dodger', 'hat-pokemon', 'hat-top', 'gg-guitar', 'gibson-es-335', 'les-paul', 'twin-reverb', 'mxr-phase-90', 'adam-a7x-monitor', 'krk-rokit-monitor', 'airpods', 'chucks', 'drone', 'robot-arm', 'low-battery', 'yodump', 'vans'],
+  'illustration': ['fender-mustang', 'fender-jaguar', 'fender-telecaster', 'ryans-guitar', 'tylers-bass', 'gibson-les-paul-junior', 'mustang-floor', 'hire-better', 'amtec-merch--4', 'amtec-christmas-cards--2', 'remote-workers', 'yodump-sticker', 'ordinary-girl--0', 'ordinary-girl--2', 'ordinary-girl--3', 'ordinary-girl--4', 'cacti', 'airspeed-alive', 'bilflo-app--0', 'bilflo-app--1', 'bilflo-app--2', 'bilflo-app--3', 'bilflo-app--4', 'bilflo-app--5', 'bilflo-app--6', 'lit-tree', 'the-true-light-was-coming-into-the-world', 'tunable-tunes--1', 'ornament-badge', 'eager-eyes-brand--2', 'joy-to-the-world-gift-card', 'tools-of-the-trade', 'the-power-of-collaboration', 'behavioral-interview-questions-cover', 'how-to-retain-top-engineers-ebook', 'amtec-web--3', 'bug', 'bus-truck', 'porsche-911', 'jag-e-star-wars', 'hat-angel', 'hat-dodger', 'hat-pokemon', 'hat-top', 'gg-guitar', 'gibson-es-335', 'les-paul', 'twin-reverb', 'mxr-phase-90', 'adam-a7x-monitor', 'krk-rokit-monitor', 'airpods', 'chucks', 'drone', 'robot-arm', 'low-battery', 'yodump', 'vans', 'set-sunburst-on-green', 'set-black-on-gray', 'set-red-on-green', 'set-red-on-gray', 'set-card-artwork', 'set-card-artwork-2', 'set-2020-front', 'set-2021-front', 'set-printed-card', 'set-card-front', 'set-landscape', 'set-workstation-wallpaper', 'set-lighthouse-image', 'set-tone-sauce'],
 };
 
 /**
@@ -50,6 +52,7 @@ export const hidden: string[] = [
   'free-gift-ticket-3-month-trial',
   'johnnys-mobile-detail--0',
   'johnnys-mobile-detail--2',
+  'amtec-60-identity--1',
   'amtec-60-identity--3',
   'amtec-60-event--1',
   'amtec-60-merch--1',
