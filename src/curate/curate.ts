@@ -678,18 +678,28 @@ search.addEventListener('input', render);
 
 function payload() {
   const hidden = [...column].filter(([, c]) => c === ARCHIVE).map(([id]) => id);
+
+  // Only pieces the site will actually render may be named in an order or in
+  // Highlights. Archiving a card used to leave it behind in its old column's
+  // order, which then named something that no longer exists and failed the
+  // build — the one place a board mistake could reach the deploy.
+  const renders = (id: string) =>
+    isCombo(id) || (column.get(id) !== ARCHIVE && !comboOf(id));
+
   const moves: Record<string, string> = {};
   for (const [id, col] of column) {
     const card = base.get(id);
     if (card && col !== ARCHIVE && col !== card.category) moves[id] = col;
   }
+
   const featured: Record<string, string[]> = {};
   for (const col of state.columns) {
-    const list = order.get(col.id);
-    if (list?.length) featured[col.id] = list.filter((id) => !isCombo(id));
+    const list = (order.get(col.id) ?? []).filter(renders);
+    if (list.length) featured[col.id] = list;
   }
+
   return {
-    highlights,
+    highlights: highlights.filter(renders),
     featured,
     hidden,
     moves,
