@@ -1,0 +1,140 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  photos: { src: ImageMetadata; alt: string }[];
+}
+const { photos } = Astro.props;
+// Match the card poses on amtec.co/about-us.
+const poses = [
+  { x: 0, r: 0, s: 1, y: 10, blur: 24, alpha: 0.16 },
+  { x: 46, r: 3, s: 0.95, y: 8, blur: 18, alpha: 0.13 },
+  { x: -46, r: -3, s: 0.9, y: 6, blur: 14, alpha: 0.11 },
+  { x: 78, r: 4.5, s: 0.86, y: 5, blur: 11, alpha: 0.09 },
+];
+const poseStyle = (position: number) => {
+  const p = poses[Math.min(position, poses.length - 1)]!;
+  return `--x:${p.x}px;--r:${p.r}deg;--s:${p.s};--sh-y:${p.y}px;--sh-b:${p.blur}px;--sh-a:${p.alpha};z-index:${photos.length - position}`;
+};
+---
+
+<div class="photo-stack" data-photo-stack role="group" aria-label="Photos of Zac Reinke">
+  {photos.map((photo, index) => (
+    <div
+      class:list={['photo-stack__item', { 'is-front': index === 0 }]}
+      style={poseStyle(index)}
+      data-photo-card
+      tabindex={index === 0 ? undefined : 0}
+      role={index === 0 ? undefined : 'button'}
+      aria-label={index === 0 ? undefined : `Bring photo to front: ${photo.alt}`}
+    >
+      <Image src={photo.src} alt={photo.alt} widths={[240, 480, 720]}
+        sizes="(min-width: 640px) 240px, 180px" loading="eager" />
+    </div>
+  ))}
+</div>
+
+<style>
+  .photo-stack {
+    display: grid;
+    position: relative;
+    isolation: isolate;
+    width: min(180px, calc(100% - 80px));
+    margin: 0 auto 3rem;
+    --fan: 0.45;
+  }
+  @media (min-width: 640px) {
+    .photo-stack { width: 240px; --fan: 1; }
+  }
+  .photo-stack__item {
+    grid-area: 1 / 1;
+    align-self: start;
+    position: relative;
+    cursor: pointer;
+    border: 3px solid rgb(255 255 255 / 0.55);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    background-clip: padding-box;
+    box-shadow: 0 var(--sh-y) var(--sh-b) rgb(0 0 0 / var(--sh-a));
+    transform:
+      perspective(700px)
+      translateX(calc(var(--x) * var(--spread, 1) * var(--fan)))
+      rotate(calc(var(--r) * var(--spread, 1) * var(--fan)))
+      scale(var(--s))
+      rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.45s ease;
+    will-change: transform;
+  }
+  .photo-stack__item img { display: block; width: 100%; height: auto; border: 0; border-radius: 0; }
+  .photo-stack__item.is-front { cursor: default; }
+  .photo-stack__item:not(.is-front)::after { content: ''; position: absolute; inset: 0; }
+  .photo-stack:hover, .photo-stack:focus-within { --spread: 1.6; }
+  .photo-stack__item:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 3px; }
+  .photo-stack__item.is-tilting { transition-duration: 0.14s; transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+  @media (hover: none) {
+    .photo-stack { --spread: 1.6; }
+    .photo-stack__item:not(.is-front)::after { inset: -10px -18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-stack__item { transition: none; }
+  }
+</style>
+
+<script>
+  for (const stack of document.querySelectorAll<HTMLElement>('[data-photo-stack]')) {
+    const items = [...stack.querySelectorAll<HTMLElement>('[data-photo-card]')];
+    const poses = items.map((item) => item.style.cssText);
+    let order = [...items];
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const promote = (item: HTMLElement) => {
+      const front = order[0]!;
+      if (front === item) return;
+      order = [item, ...order.filter((other) => other !== item && other !== front), front];
+      order.forEach((card, position) => {
+        card.style.cssText = poses[position]!;
+        card.classList.toggle('is-front', position === 0);
+        if (position === 0) {
+          card.removeAttribute('tabindex');
+          card.removeAttribute('role');
+          card.removeAttribute('aria-label');
+        } else {
+          card.tabIndex = 0;
+          card.setAttribute('role', 'button');
+          card.setAttribute('aria-label', `Bring photo to front: ${card.querySelector('img')!.alt}`);
+        }
+      });
+    };
+
+    for (const item of items) {
+      item.addEventListener('click', () => promote(item));
+      item.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          promote(item);
+        }
+      });
+      const reset = () => {
+        item.classList.remove('is-tilting');
+        item.style.setProperty('--tilt-x', '0deg');
+        item.style.setProperty('--tilt-y', '0deg');
+      };
+      item.addEventListener('pointermove', (event) => {
+        if (event.pointerType !== 'mouse' || reducedMotion.matches) return;
+        const box = item.getBoundingClientRect();
+        const x = (event.clientX - box.left) / box.width - 0.5;
+        const y = (event.clientY - box.top) / box.height - 0.5;
+        item.classList.add('is-tilting');
+        item.style.setProperty('--tilt-x', `${(-y * 3.6).toFixed(2)}deg`);
+        item.style.setProperty('--tilt-y', `${(x * 3.6).toFixed(2)}deg`);
+      });
+      item.addEventListener('pointerleave', reset);
+      item.addEventListener('blur', reset);
+      reducedMotion.addEventListener('change', reset);
+    }
+  }
+</script>

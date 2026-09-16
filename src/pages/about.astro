@@ -1,0 +1,233 @@
+---
+import PhotoStack from '../components/PhotoStack.astro';
+import zac from '../assets/zac-amtec.jpg';
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site';
+
+const introduction = 'Zac Reinke is a creative director, designer, and lifelong creative problem-solver based in Chino, California. His work spans brand identity, websites, software, video, music, and AI automation. He enjoys making beautiful things and figuring out how they should work, whether that means drawing a logo, designing a product feature, or building a tool that makes someone’s day easier.';
+const capabilities = [
+  {
+    label: 'Brand & product design',
+    skills: ['Branding & identity', 'Design systems', 'Logo design', 'Graphic design', 'Product design', 'UI/UX design', 'Enterprise software design', 'Digital illustration'],
+    tools: ['Figma', 'Adobe Creative Suite', 'Illustrator', 'Photoshop'],
+  },
+  {
+    label: 'Web & development',
+    skills: ['Front-end development', 'Systems integration', 'API development', 'Web scraping', 'Self-hosted infrastructure (VPS)', 'Technical documentation'],
+    tools: ['HTML', 'CSS', 'WordPress', 'Cursor', 'VS Code', 'Warp', 'GitHub', 'NocoDB'],
+  },
+  {
+    label: 'AI & automation',
+    skills: ['Prompt engineering', 'Large language model (LLM) integration', 'Generative AI', 'AI workflow design', 'AI agent development', 'AI-assisted development', 'Responsible AI', 'AI tool evaluation & piloting', 'Workflow automation'],
+    tools: ['Claude', 'Claude Code', 'ChatGPT', 'n8n', 'Zapier'],
+  },
+  {
+    label: 'Marketing & analytics',
+    skills: ['Marketing operations', 'Marketing automation', 'Conversion-focused landing pages', 'CRM management', 'Analytics & reporting', 'Email marketing', 'SEO', 'Generative engine optimization (GEO/AEO)', 'Content strategy'],
+    tools: ['HubSpot', 'Brevo', 'Google Analytics 4 (GA4)', 'Google Search Console', 'Semrush'],
+  },
+  {
+    label: 'Video & photography',
+    skills: ['Video production & editing', 'Social media content (YouTube, LinkedIn)', 'Photography'],
+    tools: ['Final Cut Pro', 'After Effects', 'Lightroom'],
+  },
+  {
+    label: '3D & fabrication',
+    skills: ['3D modeling', 'CAD', '3D printing'],
+    tools: ['Fusion 360', 'Bambu Studio'],
+  },
+  {
+    label: 'Audio & music',
+    skills: ['Audio engineering', 'Music production', 'Studio recording', 'Live sound', 'AV systems'],
+    tools: ['Logic Pro'],
+  },
+  {
+    label: 'Creative leadership & operations',
+    skills: ['Technology strategy', 'Cross-functional project leadership', 'Project management', 'Internal tool rollout & team enablement', 'Vendor & tool evaluation', 'Hiring & performance management', 'Process documentation'],
+    tools: [],
+  },
+];
+const profiles = [
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/zac-reinke/' },
+  { label: 'Amtec bio', url: 'https://www.amtec.co/team/zac-reinke' },
+];
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const profile = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfilePage',
+  '@id': `${canonical}#profile`,
+  url: canonical,
+  name: 'Who is Zac Reinke?',
+  description: introduction,
+  mainEntity: {
+    '@type': 'Person',
+    '@id': new URL('/#person', Astro.site).href,
+    name: site.name,
+    url: new URL('/', Astro.site).href,
+    image: new URL(zac.src, Astro.site).href,
+    description: introduction,
+    jobTitle: 'Creative Director',
+    worksFor: {
+      '@type': 'Organization',
+      name: 'Amtec Staffing',
+      url: 'https://www.amtec.co/',
+    },
+    homeLocation: {
+      '@type': 'Place',
+      name: 'Chino, California',
+    },
+    sameAs: profiles.map(({ url }) => url),
+    knowsAbout: capabilities.flatMap(({ skills, tools }) => [...skills, ...tools]),
+  },
+};
+---
+
+<Base
+  title="Zac Reinke | Creative Director & Designer in Chino, CA"
+  description="Meet Zac Reinke, a creative director and designer in Chino, California, working across brand identity, websites, software, video, music, and AI automation."
+  skipTarget="#about"
+  skipLabel="Skip to biography"
+>
+  <script
+    slot="head"
+    is:inline
+    type="application/ld+json"
+    set:html={JSON.stringify(profile).replace(/</g, '\\u003c')}
+  />
+  <div class="shell">
+    <Nav current="about" />
+    <main id="about" tabindex="-1" class="flex-1 px-6 pt-6 sm:px-8 sm:pt-10">
+      <article aria-labelledby="about-heading" class="mx-auto max-w-[760px]">
+        <PhotoStack photos={[{ src: zac, alt: 'Zac Reinke' }]} />
+        <h1
+          id="about-heading"
+          class="text-center font-heading font-medium text-balance"
+          style="font-size: clamp(34px, 6vw, 62px); letter-spacing: -0.04em; line-height: 1.05;"
+        >
+          Who is Zac Reinke?
+        </h1>
+
+        <div class="about-copy mt-10 text-[16px] leading-[1.8] sm:mt-14 sm:text-[18px]">
+          <div class="biography">
+            <p id="about-introduction">{introduction}</p>
+
+            <p>
+              Zac joined <a href="https://amtec.co/" target="_blank" rel="noopener noreferrer">Amtec Staffing</a> in Chino Hills as Marketing Coordinator in July 2018
+              and became Creative Director in August 2023. He develops the visual identities
+              of Amtec and TriStaff across digital and physical media, including websites,
+              emails, social content, ads, printed materials, packaging, promotional goods,
+              and apparel. His role covers both planning and production: working through a
+              campaign’s goals, documenting the details, coordinating with the team, and
+              creating the finished work.
+            </p>
+
+            <p>
+              Over his time at Amtec, he has developed and managed seven websites, bringing
+              together visual design, front-end development, user experience, integrations, and
+              search optimization. A keyword-focused content strategy he developed tripled
+              Amtec’s organic traffic in six months. He also leads content, email, inbound,
+              and account-based marketing, using performance data and business goals to
+              guide decisions. That work includes landing pages, CRM management,
+              automation, and reporting. He applies SEO and
+              answer engine optimization to help people find useful information through
+              search engines and AI tools.
+            </p>
+
+            <p>
+              Much of his recent work involves designing software and building automations
+              for practical, everyday needs. He has created more than fifteen custom AI
+              systems for outreach, content production, research, internal tools, and
+              reporting, including scheduled AI workflows running on a server he manages.
+            </p>
+
+            <p>
+              From March 2021 through August 2024, Zac also served as Design Manager at{' '}
+              <a href="https://bilflo.com/" target="_blank" rel="noopener noreferrer">Bilflo</a>, Amtec’s sister company, alongside his full-time Amtec role. He created
+              Bilflo’s branding system, including its logo, colors, typography, graphic
+              motifs, video elements, website, and web app design. He led new-feature
+              product design for its enterprise back-office software and hired, directed,
+              and evaluated freelance designers. His work with developers included feature
+              walkthroughs and quality assurance videos, while his customer-facing work
+              included scripting, recording, and editing videos about the product, its
+              features, and its integrations.
+            </p>
+
+            <p>
+              Alongside his company roles, Zac has created brand identities for freelance
+              clients since 2016. His creative background also includes music: he studied
+              audio recording at Azusa Pacific University and played guitar in its worship
+              band. He interned at four recording studios and recorded and released two
+              EPs and singles.
+            </p>
+
+            <p>
+              Zac’s creative and technical interests share a consistent focus on
+              form and function. He cares about how something looks, how it works, and
+              the details that make it feel complete. Across creative and technical
+              projects, he pursues the same standard of quality from the first idea
+              through delivery.
+            </p>
+          </div>
+
+          <div class="mt-10">
+            <a
+              href={`mailto:${site.email}?subject=Let%27s%20work%20together`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="label-caps inline-flex h-10 shrink-0 items-center rounded-full bg-ink px-3 text-card whitespace-nowrap transition-opacity duration-200 hover:opacity-80 min-[360px]:px-5 sm:h-[52px] sm:px-6 lg:h-16 lg:px-8"
+            >Get in touch</a>
+            <div class="mt-2 flex flex-wrap gap-x-6 text-[15px]">
+              {profiles.map(({ label, url }) => (
+                <a href={url} target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center underline underline-offset-4">
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <section aria-labelledby="tools-heading" class="capabilities mt-10 border-t border-line pt-8">
+            <h2 id="tools-heading">Skills &amp; tools</h2>
+            <dl class="space-y-6 text-[14px] leading-[1.8] sm:text-[15px]">
+              {capabilities.map(({ label, skills, tools }) => (
+                <div>
+                  <dt class="mb-1 font-semibold">{label}</dt>
+                  <dd>
+                    <p>{skills.join(' · ')}</p>
+                    {tools.length > 0 && <p class="mt-2">{tools.join(' · ')}</p>}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+        </div>
+      </article>
+    </main>
+    <Footer />
+  </div>
+  <div class="frame" aria-hidden="true"></div>
+</Base>
+
+<style>
+  .about-copy h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-family: var(--font-heading);
+    font-size: clamp(26px, 3vw, 32px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .biography > p + p {
+    margin-top: 1.25rem;
+  }
+
+  .biography a {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+</style>

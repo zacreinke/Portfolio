@@ -6,9 +6,16 @@ import { withBase } from '../lib/url';
 interface Props {
   title?: string;
   description?: string;
+  skipTarget?: string;
+  skipLabel?: string;
 }
 
-const { title = `${site.name} — Portfolio`, description = site.description } = Astro.props;
+const {
+  title = `${site.name} — Portfolio`,
+  description = site.description,
+  skipTarget = '#work',
+  skipLabel = 'Skip to work',
+} = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
@@ -27,6 +34,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
 
     {/* Same font stack the resumes load, so the two render identically. */}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -45,10 +53,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
 
   <body>
     <a
-      href="#work"
+      href={skipTarget}
       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-card"
     >
-      Skip to work
+      {skipLabel}
     </a>
     <slot />
   </body>

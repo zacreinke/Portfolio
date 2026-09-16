@@ -8,7 +8,8 @@ import { site } from '../data/site';
  * landing on the name.
  *
  * Driven entirely by CSS keyframes rather than JS, so it still plays and still
- * clears itself if the script fails. JS only removes the node afterwards.
+ * clears itself if the script fails. A synchronous session check skips repeat
+ * visits before the loader can paint.
  */
 const logos = import.meta.glob<{ default: ImageMetadata }>('../assets/loader/*.png', {
   eager: true,
@@ -30,6 +31,20 @@ const nameAt = (marks.length - 1) * STEP + HOLD - 0.12;
 const outAt = nameAt + 0.95; // the name gets a beat of its own before the lift
 ---
 
+<script is:inline>
+  (() => {
+    let skip = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try {
+      skip ||= sessionStorage.getItem('zac-reinke:intro-seen') === '1';
+      // Mark at entry, so leaving during the animation does not replay it.
+      sessionStorage.setItem('zac-reinke:intro-seen', '1');
+    } catch {
+      // Storage can be unavailable; the CSS animation still clears itself.
+    }
+    document.documentElement.toggleAttribute('data-skip-intro', skip);
+  })();
+</script>
+
 <div id="loader" aria-hidden="true" style={`--out-at:${outAt}s`}>
   <div class="loader-stage">
     {
@@ -50,7 +65,15 @@ const outAt = nameAt + 0.95; // the name gets a beat of its own before the lift
   </div>
 </div>
 
+<script is:inline>
+  if (document.documentElement.hasAttribute('data-skip-intro')) {
+    document.getElementById('loader')?.remove();
+  }
+</script>
+
 <style define:vars={{ hold: `${HOLD}s` }}>
+  :global(html[data-skip-intro]) #loader { display: none; }
+
   #loader {
     position: fixed;
     /* Full bleed — the frame sits above and masks it to the rounded window. */
