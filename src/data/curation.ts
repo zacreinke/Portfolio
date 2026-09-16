@@ -26,6 +26,11 @@ export const highlights: string[] = [
   'starship-mini',
   'amtec-site-walkthrough',
   'me-without-you',
+  'clearly-filtered--0',
+  'clearly-filtered--1',
+  'clearly-filtered--2',
+  'clearly-filtered--3',
+  'clearly-filtered--4',
 ];
 
 /**
@@ -91,11 +96,6 @@ export const hidden: string[] = [
   'algorri-trucks--3',
   'algorri-trucks--4',
   'algorri-trucks--5',
-  'clearly-filtered--0',
-  'clearly-filtered--1',
-  'clearly-filtered--2',
-  'clearly-filtered--3',
-  'clearly-filtered--4',
   'door-bubbles',
   'evergreen-lockups--2',
   'evergreen-lockups--5',
