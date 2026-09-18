@@ -71,7 +71,7 @@ const hasTransparent =
     item.slides.some((s) => isImageSlide(s) && transparent.has(nameOf(s.src) ?? '')));
 
 /** Letterbox rather than crop whenever cropping would lose part of the work. */
-const contain = clamped || hasTransparent;
+const contain = item.contain || clamped || hasTransparent;
 
 /** Two more slides peek out from behind the cover on hover, like a fanned deck. */
 const fan =

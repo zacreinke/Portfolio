@@ -77,6 +77,8 @@ type Base = {
   category: Category;
   /** Span two columns wherever the grid is at least three wide. */
   wide?: boolean;
+  /** Show the whole artwork when a carousel mixes image proportions. */
+  contain?: boolean;
 };
 
 /**
@@ -200,22 +202,13 @@ const catalog: WorkItem[] = [
   },
   {
     id: 'rebuild-skills-identity',
-    title: 'Rebuild Skills — Identity',
-    caption: 'Logo system and brand presentation',
+    title: 'Rebuild Skills',
+    caption: 'Logo system, brand presentation and product image guide',
     category: 'branding',
     kind: 'carousel',
     slides: [
       { src: img('rebuild-skills-logo-system.png'), caption: 'Logo system and lockups' },
       { src: img('rebuild-skills-brand-hero.png'), caption: 'Brand presentation' },
-    ],
-  },
-  {
-    id: 'rebuild-skills-product-guide',
-    title: 'Rebuild Skills — Product Image Guide',
-    caption: 'A nine-page guide to consistent product imagery',
-    category: 'branding',
-    kind: 'carousel',
-    slides: [
       {
         doc: [
           img('rebuild-skills-product-guide-p01.png'),
@@ -1463,10 +1456,14 @@ const catalog: WorkItem[] = [
   {
     id: 'revd-up',
     title: "Rev'd Up",
-    caption: 'Vertical lockup for an automotive brand',
+    caption: 'Logo system for a plumbing and drain service',
     category: 'branding',
-    kind: 'image',
-    src: img('logos-marks-add-06-revd-up-lockup-vertical-light-xl.webp'),
+    kind: 'carousel',
+    contain: true,
+    slides: [
+      { src: img('revd-up-logo-system.png'), caption: 'Logo system and color variations' },
+      { src: img('revd-up-stacked-lockup.png'), caption: 'Stacked lockup' },
+    ],
   },
   {
     id: 'foothills',
