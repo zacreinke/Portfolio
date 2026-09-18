@@ -178,6 +178,71 @@ const sc = (kind: 'tracks' | 'playlists', id: number) =>
  * reversible.
  */
 const catalog: WorkItem[] = [
+  /* -------------------------------- Branding ------------------------------- */
+  {
+    id: 'seahorse-identity',
+    title: 'Seahorse — Identity',
+    caption: 'Logo system for protective equipment cases',
+    category: 'branding',
+    kind: 'carousel',
+    slides: [
+      { src: img('seahorse-logo-system.png'), caption: 'Logo system and color variations' },
+      { src: img('seahorse-stacked-lockup.png'), caption: 'Stacked lockup' },
+    ],
+  },
+  {
+    id: 'clearly-filtered-brand-board',
+    title: 'Clearly Filtered — Brand Concepts',
+    caption: 'Product messaging and visual concepts',
+    category: 'branding',
+    kind: 'image',
+    src: img('clearly-filtered-brand-board.png'),
+  },
+  {
+    id: 'rebuild-skills-identity',
+    title: 'Rebuild Skills — Identity',
+    caption: 'Logo system and brand presentation',
+    category: 'branding',
+    kind: 'carousel',
+    slides: [
+      { src: img('rebuild-skills-logo-system.png'), caption: 'Logo system and lockups' },
+      { src: img('rebuild-skills-brand-hero.png'), caption: 'Brand presentation' },
+    ],
+  },
+  {
+    id: 'rebuild-skills-product-guide',
+    title: 'Rebuild Skills — Product Image Guide',
+    caption: 'A nine-page guide to consistent product imagery',
+    category: 'branding',
+    kind: 'carousel',
+    slides: [
+      {
+        doc: [
+          img('rebuild-skills-product-guide-p01.png'),
+          img('rebuild-skills-product-guide-p02.png'),
+          img('rebuild-skills-product-guide-p03.png'),
+          img('rebuild-skills-product-guide-p04.png'),
+          img('rebuild-skills-product-guide-p05.png'),
+          img('rebuild-skills-product-guide-p06.png'),
+          img('rebuild-skills-product-guide-p07.png'),
+          img('rebuild-skills-product-guide-p08.png'),
+          img('rebuild-skills-product-guide-p09.png'),
+        ],
+        caption: 'Product image guide, 9 pages',
+      },
+    ],
+  },
+  {
+    id: 'willow-circle-identity',
+    title: 'Willow Circle — Identity',
+    caption: 'Logo system, color palette and lockups',
+    category: 'branding',
+    kind: 'carousel',
+    slides: [
+      { src: img('willow-circle-logo-system.png'), caption: 'Logo system and color palette' },
+      { src: img('willow-circle-horizontal-lockup.png'), caption: 'Horizontal lockup' },
+    ],
+  },
   /* ----------------------------- Graphic Design ---------------------------- */
   /* Bilflo was one 20-slide carousel holding identity, social and collateral.
      Split by artefact so a rotation never changes the subject. Two slides were
